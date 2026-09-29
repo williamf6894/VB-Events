@@ -113,10 +113,19 @@ func TestEventRepository_Update(t *testing.T) {
 func TestEventRepository_DeleteByID(t *testing.T) {
 	cleanTables(t, testDB)
 	repo := NewEventRepository(testDB)
+	participantRepo := NewParticipantRepository(testDB)
 
 	created := newEvent("Doomed Event", tsBase)
 	if err := repo.Create(created); err != nil {
 		t.Fatalf("Create returned error: %s", err)
+	}
+
+	participant := newParticipant("Lena Duarte", "lena@example.com")
+	if err := participantRepo.Create(participant); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+	if err := repo.AddParticipant(created.ID, participant.ID); err != nil {
+		t.Fatalf("AddParticipant returned error: %s", err)
 	}
 
 	if err := repo.DeleteByID(created.ID); err != nil {
@@ -125,6 +134,12 @@ func TestEventRepository_DeleteByID(t *testing.T) {
 
 	if _, err := repo.FindByID(created.ID); !errors.Is(err, gorm.ErrRecordNotFound) {
 		t.Fatalf("expected event to be deleted, got: %v", err)
+	}
+
+	var registrations int64
+	testDB.Table("event_participants").Where("event_id = ?", created.ID).Count(&registrations)
+	if registrations != 0 {
+		t.Fatalf("expected registrations to be removed, got %d", registrations)
 	}
 
 	if err := repo.DeleteByID(created.ID); !errors.Is(err, gorm.ErrRecordNotFound) {

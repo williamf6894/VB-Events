@@ -42,3 +42,12 @@ export async function updateEvent(id: string, payload: CreateEventPayload): Prom
   }
   return (await response.json()) as Event
 }
+
+export async function deleteEvent(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/events/${id}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok && response.status !== 204) {
+    throw new Error(`Request failed: ${response.status} ${response.statusText}`)
+  }
+}

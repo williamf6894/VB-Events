@@ -35,6 +35,11 @@ func (r *EventRepository) Update(event *models.Event) error {
 }
 
 func (r *EventRepository) DeleteByID(id uuid.UUID) error {
+	if err := r.db.Exec("DELETE FROM event_participants WHERE event_id = ?", id).Error; err != nil {
+		slog.Error("failed to remove event registrations", "error", err, "id", id)
+		return err
+	}
+
 	result := r.db.Delete(&models.Event{}, "id = ?", id)
 	if result.Error != nil {
 		slog.Error("failed to delete event", "error", result.Error, "id", id)

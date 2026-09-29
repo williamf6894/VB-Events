@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import EventFormDialog from '@/components/EventFormDialog.vue'
-import { getEvent } from '@/services/events'
+import { deleteEvent, getEvent } from '@/services/events'
 import type { Event } from '@/types/event'
 
 const route = useRoute()
+const router = useRouter()
 
 const event = ref<Event | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const notFound = ref(false)
 const showEditDialog = ref(false)
+const deleting = ref(false)
 
 async function loadEvent() {
   loading.value = true
@@ -34,6 +36,22 @@ onMounted(loadEvent)
 function onEventSaved() {
   showEditDialog.value = false
   loadEvent()
+}
+
+async function onDelete() {
+  if (!event.value || deleting.value) return
+  if (!window.confirm(`Delete "${event.value.name}"? This cannot be undone.`)) return
+
+  deleting.value = true
+  error.value = null
+
+  try {
+    await deleteEvent(event.value.id)
+    router.push({ name: 'home' })
+  } catch {
+    error.value = 'Failed to delete event. Please try again.'
+    deleting.value = false
+  }
 }
 
 const spotsAvailable = computed(() =>
@@ -74,6 +92,9 @@ function formatDate(timestamp: string): string {
           <span class="event-details__when">{{ formatDate(event.startTimestamp) }}</span>
           <button class="event-details__edit" type="button" @click="showEditDialog = true">
             Edit
+          </button>
+          <button class="event-details__delete" type="button" :disabled="deleting" @click="onDelete">
+            {{ deleting ? 'Deleting…' : 'Delete' }}
           </button>
         </div>
       </header>
@@ -170,6 +191,26 @@ function formatDate(timestamp: string): string {
 
 .event-details__edit:hover {
   background: #f1f5f9;
+}
+
+.event-details__delete {
+  border: 1px solid #fecaca;
+  border-radius: 0.4rem;
+  padding: 0.45rem 1rem;
+  background: #fff;
+  color: #dc2626;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.event-details__delete:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.event-details__delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .event-details__description {
