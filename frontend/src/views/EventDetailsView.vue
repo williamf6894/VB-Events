@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import EventFormDialog from '@/components/EventFormDialog.vue'
 import { getEvent } from '@/services/events'
 import type { Event } from '@/types/event'
 
@@ -10,8 +11,11 @@ const event = ref<Event | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const notFound = ref(false)
+const showEditDialog = ref(false)
 
-onMounted(async () => {
+async function loadEvent() {
+  loading.value = true
+  error.value = null
   try {
     event.value = await getEvent(String(route.params.id))
   } catch (err) {
@@ -23,7 +27,14 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadEvent)
+
+function onEventSaved() {
+  showEditDialog.value = false
+  loadEvent()
+}
 
 const spotsAvailable = computed(() =>
   event.value ? event.value.capacity - (event.value.participants?.length ?? 0) : 0,
@@ -50,9 +61,21 @@ function formatDate(timestamp: string): string {
     <p v-else-if="error" class="status status--error">{{ error }}</p>
 
     <template v-else-if="event">
+      <EventFormDialog
+        v-if="showEditDialog"
+        :event="event"
+        @saved="onEventSaved"
+        @close="showEditDialog = false"
+      />
+
       <header class="event-details__header">
         <h1>{{ event.name }}</h1>
-        <span class="event-details__when">{{ formatDate(event.startTimestamp) }}</span>
+        <div class="event-details__header-actions">
+          <span class="event-details__when">{{ formatDate(event.startTimestamp) }}</span>
+          <button class="event-details__edit" type="button" @click="showEditDialog = true">
+            Edit
+          </button>
+        </div>
       </header>
 
       <p class="event-details__description">{{ event.description }}</p>
@@ -122,10 +145,31 @@ function formatDate(timestamp: string): string {
   margin: 0;
 }
 
+.event-details__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .event-details__when {
   color: #0f766e;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.event-details__edit {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  padding: 0.45rem 1rem;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.event-details__edit:hover {
+  background: #f1f5f9;
 }
 
 .event-details__description {

@@ -1,3 +1,12 @@
+export interface CreateEventPayload {
+  name: string
+  description: string
+  location: string
+  capacity: number
+  duration: number
+  startTimestamp: string
+}
+
 export interface Participant {
   id: string
   name: string

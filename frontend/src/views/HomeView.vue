@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import EventFormDialog from '@/components/EventFormDialog.vue'
 import { getUpcomingEvents } from '@/services/events'
 import type { Event } from '@/types/event'
 
 const events = ref<Event[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const showCreateDialog = ref(false)
 
-onMounted(async () => {
+async function loadEvents() {
+  loading.value = true
+  error.value = null
   try {
     events.value = await getUpcomingEvents()
   } catch {
@@ -15,7 +19,14 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadEvents)
+
+function onEventSaved() {
+  showCreateDialog.value = false
+  loadEvents()
+}
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {
   dateStyle: 'full',
@@ -29,7 +40,18 @@ function formatDate(timestamp: string): string {
 
 <template>
   <section class="events">
-    <h1>Upcoming Events</h1>
+    <div class="events__header">
+      <h1>Upcoming Events</h1>
+      <button class="events__create" type="button" @click="showCreateDialog = true">
+        + Create Event
+      </button>
+    </div>
+
+    <EventFormDialog
+      v-if="showCreateDialog"
+      @saved="onEventSaved"
+      @close="showCreateDialog = false"
+    />
 
     <p v-if="loading" class="status">Loading events…</p>
 
@@ -63,6 +85,33 @@ function formatDate(timestamp: string): string {
   max-width: 46rem;
   margin: 0 auto;
   padding: 2rem 1rem;
+}
+
+.events__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.events__header h1 {
+  margin: 0;
+}
+
+.events__create {
+  border: none;
+  border-radius: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  background: #0f766e;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.events__create:hover {
+  background: #115e59;
 }
 
 .events__list {
