@@ -7,9 +7,10 @@ import (
 )
 
 type Participant struct {
-	ID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"id" swaggertype:"string"`
-	Name  string    `gorm:"type:text;not null" json:"name"`
-	Email string    `gorm:"type:text;not null;uniqueIndex" json:"email"`
+	ID       uuid.UUID `gorm:"type:uuid;primaryKey" json:"id" swaggertype:"string"`
+	Name     string    `gorm:"type:text;not null" json:"name"`
+	Email    string    `gorm:"type:text;not null;uniqueIndex" json:"email"`
+	Password string    `gorm:"type:text" json:"-"`
 }
 
 func (p *Participant) BeforeCreate(tx *gorm.DB) error {

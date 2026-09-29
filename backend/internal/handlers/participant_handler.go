@@ -20,8 +20,9 @@ func NewParticipantHandler(service *services.ParticipantService) *ParticipantHan
 }
 
 type participantRequest struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password" example:"min 8 characters"`
 }
 
 // CreateParticipant godoc
@@ -43,8 +44,9 @@ func (h *ParticipantHandler) Create(c *echo.Context) error {
 	}
 
 	participant := &models.Participant{
-		Name:  req.Name,
-		Email: req.Email,
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
 	}
 
 	if err := h.service.Create(participant); err != nil {
@@ -128,9 +130,10 @@ func (h *ParticipantHandler) Update(c *echo.Context) error {
 	}
 
 	participant := &models.Participant{
-		ID:    id,
-		Name:  req.Name,
-		Email: req.Email,
+		ID:       id,
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
 	}
 
 	if err := h.service.Update(participant); err != nil {

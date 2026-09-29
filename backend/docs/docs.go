@@ -744,6 +744,10 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "min 8 characters"
                 }
             }
         },

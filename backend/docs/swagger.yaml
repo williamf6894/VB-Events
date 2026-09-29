@@ -31,6 +31,9 @@ definitions:
         type: string
       name:
         type: string
+      password:
+        example: min 8 characters
+        type: string
     type: object
   models.Event:
     properties:

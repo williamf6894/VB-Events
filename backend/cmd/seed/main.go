@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/williamf6894/VB-Events/internal/config"
 	"github.com/williamf6894/VB-Events/internal/db"
 	"github.com/williamf6894/VB-Events/internal/models"
@@ -26,7 +28,12 @@ func main() {
 		panic("failed to clear existing data")
 	}
 
-	participants := seedParticipants()
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	if err != nil {
+		panic("failed to hash seed password")
+	}
+
+	participants := seedParticipants(string(passwordHash))
 	if err := database.Create(&participants).Error; err != nil {
 		panic("failed to seed participants")
 	}
@@ -99,16 +106,16 @@ func main() {
 	)
 }
 
-func seedParticipants() []models.Participant {
+func seedParticipants(passwordHash string) []models.Participant {
 	return []models.Participant{
-		{Name: "Alice Nguyen", Email: "alice@example.com"},
-		{Name: "Bob Torres", Email: "bob@example.com"},
-		{Name: "Carol Ito", Email: "carol@example.com"},
-		{Name: "Dave Okafor", Email: "dave@example.com"},
-		{Name: "Eve Kowalski", Email: "eve@example.com"},
-		{Name: "Frank Delgado", Email: "frank@example.com"},
-		{Name: "Grace Kim", Email: "grace@example.com"},
-		{Name: "Heather Blake", Email: "heather@example.com"},
+		{Name: "Alice Nguyen", Email: "alice@example.com", Password: passwordHash},
+		{Name: "Bob Torres", Email: "bob@example.com", Password: passwordHash},
+		{Name: "Carol Ito", Email: "carol@example.com", Password: passwordHash},
+		{Name: "Dave Okafor", Email: "dave@example.com", Password: passwordHash},
+		{Name: "Eve Kowalski", Email: "eve@example.com", Password: passwordHash},
+		{Name: "Frank Delgado", Email: "frank@example.com", Password: passwordHash},
+		{Name: "Grace Kim", Email: "grace@example.com", Password: passwordHash},
+		{Name: "Heather Blake", Email: "heather@example.com", Password: passwordHash},
 	}
 }
 
