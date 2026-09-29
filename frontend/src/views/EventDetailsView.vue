@@ -2,11 +2,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import EventFormDialog from '@/components/EventFormDialog.vue'
-import { deleteEvent, getEvent } from '@/services/events'
+import { deleteEvent, getEvent, joinEvent } from '@/services/events'
+import { useAuthStore } from '@/stores/auth'
 import type { Event } from '@/types/event'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const event = ref<Event | null>(null)
 const loading = ref(true)
@@ -14,6 +16,8 @@ const error = ref<string | null>(null)
 const notFound = ref(false)
 const showEditDialog = ref(false)
 const deleting = ref(false)
+const joining = ref(false)
+const joinError = ref<string | null>(null)
 
 async function loadEvent() {
   loading.value = true
@@ -58,6 +62,28 @@ const spotsAvailable = computed(() =>
   event.value ? event.value.capacity - (event.value.participants?.length ?? 0) : 0,
 )
 
+const isParticipating = computed(
+  () => event.value?.participants?.some((p) => p.id === authStore.user?.id) ?? false,
+)
+
+const isFull = computed(() => spotsAvailable.value <= 0)
+
+async function onParticipate() {
+  if (!event.value || joining.value || isParticipating.value || isFull.value) return
+
+  joining.value = true
+  joinError.value = null
+
+  try {
+    await joinEvent(event.value.id)
+    await loadEvent()
+  } catch (err) {
+    joinError.value = err instanceof Error ? err.message : 'Failed to join event.'
+  } finally {
+    joining.value = false
+  }
+}
+
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {
   dateStyle: 'full',
   timeStyle: 'short',
@@ -90,6 +116,17 @@ function formatDate(timestamp: string): string {
         <h1>{{ event.name }}</h1>
         <div class="event-details__header-actions">
           <span class="event-details__when">{{ formatDate(event.startTimestamp) }}</span>
+          <button
+            v-if="!isParticipating"
+            class="event-details__participate"
+            type="button"
+            :disabled="isFull || joining"
+            :title="isFull ? 'This event is at capacity' : undefined"
+            @click="onParticipate"
+          >
+            {{ joining ? 'Joining…' : isFull ? 'Event Full' : 'Participate' }}
+          </button>
+          <span v-else class="event-details__going">✓ You're going</span>
           <button class="event-details__edit" type="button" @click="showEditDialog = true">
             Edit
           </button>
@@ -100,6 +137,8 @@ function formatDate(timestamp: string): string {
       </header>
 
       <p class="event-details__description">{{ event.description }}</p>
+
+      <p v-if="joinError" class="event-details__join-error">{{ joinError }}</p>
 
       <dl class="event-details__meta">
         <div class="event-details__row">
@@ -187,6 +226,41 @@ function formatDate(timestamp: string): string {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+
+.event-details__participate {
+  border: none;
+  border-radius: 0.4rem;
+  padding: 0.45rem 1rem;
+  background: #0f766e;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.event-details__participate:hover:not(:disabled) {
+  background: #115e59;
+}
+
+.event-details__participate:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.event-details__going {
+  color: #0f766e;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.event-details__join-error {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.4rem;
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .event-details__edit:hover {

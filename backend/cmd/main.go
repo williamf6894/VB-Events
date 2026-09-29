@@ -17,6 +17,7 @@ import (
 	"github.com/williamf6894/VB-Events/internal/config"
 	"github.com/williamf6894/VB-Events/internal/db"
 	"github.com/williamf6894/VB-Events/internal/handlers"
+	"github.com/williamf6894/VB-Events/internal/middleware"
 	"github.com/williamf6894/VB-Events/internal/models"
 	"github.com/williamf6894/VB-Events/internal/repository"
 	"github.com/williamf6894/VB-Events/internal/services"
@@ -26,6 +27,9 @@ import (
 // @version		1.0
 // @description	Events management API
 // @BasePath		/
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
 const swaggerInitializer = `window.onload = function() {
   window.ui = SwaggerUIBundle({
     url: "/swagger/doc.json",
@@ -71,6 +75,7 @@ func main() {
 
 	authService := services.NewAuthService(participantRepo, cfg)
 	authHandler := handlers.NewAuthHandler(authService)
+	authMiddleware := middleware.Auth(authService, participantRepo)
 	healthHandler := handlers.NewHealthHandler(database)
 
 	// Middleware
@@ -132,6 +137,7 @@ func main() {
 	// API
 	e.POST("/auth/register", authHandler.Register)
 	e.POST("/auth/login", authHandler.Login)
+	e.GET("/auth/me", authHandler.Me, authMiddleware)
 
 	e.GET("/participants", participantHandler.List)
 	e.GET("/participants/:id", participantHandler.FindByID)
@@ -148,6 +154,7 @@ func main() {
 	e.GET("/events/between", eventHandler.FindAllBetween)
 	e.PUT("/events/:id", eventHandler.Update)
 	e.DELETE("/events/:id", eventHandler.Delete)
+	e.POST("/events/:id/participants", eventHandler.Join, authMiddleware)
 
 	// Swagger Documentation
 	e.GET("/swagger", func(c *echo.Context) error {

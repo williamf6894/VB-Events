@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	"github.com/williamf6894/VB-Events/internal/middleware"
 	"github.com/williamf6894/VB-Events/internal/models"
 	"github.com/williamf6894/VB-Events/internal/services"
 )
@@ -87,4 +88,20 @@ func (h *AuthHandler) Login(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to log in")
 	}
 	return c.JSON(http.StatusOK, token)
+}
+
+// Me godoc
+// @Summary      Get the currently authenticated participant
+// @Tags         auth
+// @Produce      json
+// @Success      200 {object} models.Participant
+// @Failure      401 {object} object "Not authenticated"
+// @Security     BearerAuth
+// @Router       /auth/me [get]
+func (h *AuthHandler) Me(c *echo.Context) error {
+	participant := middleware.ParticipantFrom(c)
+	if participant == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "not authenticated")
+	}
+	return c.JSON(http.StatusOK, participant)
 }

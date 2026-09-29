@@ -13,8 +13,10 @@ import (
 )
 
 var (
-	ErrEventNotFound = errors.New("event not found")
-	ErrInvalidEvent  = errors.New("invalid event data")
+	ErrEventNotFound     = errors.New("event not found")
+	ErrInvalidEvent      = errors.New("invalid event data")
+	ErrAlreadyRegistered = errors.New("already registered for this event")
+	ErrEventFull         = errors.New("event is at capacity")
 )
 
 type EventService struct {
@@ -77,6 +79,28 @@ func (s *EventService) FindByID(id uuid.UUID) (*models.Event, error) {
 		return nil, err
 	}
 	return event, nil
+}
+
+func (s *EventService) JoinEvent(eventID, participantID uuid.UUID) error {
+	event, err := s.repo.FindByID(eventID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrEventNotFound
+		}
+		return err
+	}
+
+	for _, participant := range event.Participants {
+		if participant.ID == participantID {
+			return ErrAlreadyRegistered
+		}
+	}
+
+	if event.Capacity > 0 && len(event.Participants) >= event.Capacity {
+		return ErrEventFull
+	}
+
+	return s.repo.AddParticipant(eventID, participantID)
 }
 
 func (s *EventService) FindByName(name string) (*models.Event, error) {

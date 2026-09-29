@@ -117,6 +117,24 @@ paths:
       summary: Log in with email and password
       tags:
       - auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Participant'
+        "401":
+          description: Not authenticated
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get the currently authenticated participant
+      tags:
+      - auth
   /auth/register:
     post:
       consumes:
@@ -288,6 +306,44 @@ paths:
           schema:
             type: object
       summary: Update an event
+      tags:
+      - events
+  /events/{id}/participants:
+    post:
+      description: Adds the authenticated participant to the event if there is capacity
+        remaining and they are not already registered
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Invalid event id
+          schema:
+            type: object
+        "401":
+          description: Not authenticated
+          schema:
+            type: object
+        "404":
+          description: Event not found
+          schema:
+            type: object
+        "409":
+          description: Already registered, or event is at capacity
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Register the current user as a participant of an event
       tags:
       - events
   /events/after:
@@ -564,4 +620,9 @@ paths:
       summary: Update a participant
       tags:
       - participants
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

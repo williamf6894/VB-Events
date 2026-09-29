@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import EventFormDialog from '@/components/EventFormDialog.vue'
 import { getUpcomingEvents } from '@/services/events'
+import { useAuthStore } from '@/stores/auth'
 import type { Event } from '@/types/event'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const events = ref<Event[]>([])
 const loading = ref(true)
@@ -28,6 +33,11 @@ function onEventSaved() {
   loadEvents()
 }
 
+function logout() {
+  authStore.logout()
+  router.push({ name: 'login' })
+}
+
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {
   dateStyle: 'full',
   timeStyle: 'short',
@@ -42,9 +52,12 @@ function formatDate(timestamp: string): string {
   <section class="events">
     <div class="events__header">
       <h1>Upcoming Events</h1>
-      <button class="events__create" type="button" @click="showCreateDialog = true">
-        + Create Event
-      </button>
+      <div class="events__header-actions">
+        <button class="events__create" type="button" @click="showCreateDialog = true">
+          + Create Event
+        </button>
+        <button class="events__logout" type="button" @click="logout">Log Out</button>
+      </div>
     </div>
 
     <EventFormDialog
@@ -99,6 +112,12 @@ function formatDate(timestamp: string): string {
   margin: 0;
 }
 
+.events__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .events__create {
   border: none;
   border-radius: 0.4rem;
@@ -112,6 +131,21 @@ function formatDate(timestamp: string): string {
 
 .events__create:hover {
   background: #115e59;
+}
+
+.events__logout {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.events__logout:hover {
+  background: #f1f5f9;
 }
 
 .events__list {
