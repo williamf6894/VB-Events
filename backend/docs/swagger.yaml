@@ -1,10 +1,47 @@
 basePath: /
 definitions:
+  handlers.eventRequest:
+    properties:
+      capacity:
+        type: integer
+      description:
+        type: string
+      duration:
+        type: number
+      location:
+        type: string
+      name:
+        type: string
+      startTimestamp:
+        format: date-time
+        type: string
+    type: object
   handlers.participantRequest:
     properties:
       email:
         type: string
       name:
+        type: string
+    type: object
+  models.Event:
+    properties:
+      capacity:
+        type: integer
+      description:
+        type: string
+      duration:
+        type: number
+      id:
+        type: string
+      location:
+        type: string
+      name:
+        type: string
+      participants:
+        items:
+          $ref: '#/definitions/models.Participant'
+        type: array
+      startTimestamp:
         type: string
     type: object
   models.Participant:
@@ -22,6 +59,259 @@ info:
   title: VB-Events API
   version: "1.0"
 paths:
+  /events:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: List all events
+      tags:
+      - events
+    post:
+      consumes:
+      - application/json
+      description: Creates an event with a name and start timestamp
+      parameters:
+      - description: Event to create
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.eventRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Event'
+        "400":
+          description: Invalid body, or missing name/startTimestamp
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Create a new event
+      tags:
+      - events
+  /events/{id}:
+    delete:
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Invalid event id
+          schema:
+            type: object
+        "404":
+          description: Event not found
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Delete an event
+      tags:
+      - events
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated event data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.eventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Event'
+        "400":
+          description: Invalid body or id, or missing name/startTimestamp
+          schema:
+            type: object
+        "404":
+          description: Event not found
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Update an event
+      tags:
+      - events
+  /events/after:
+    get:
+      parameters:
+      - description: RFC3339 timestamp
+        in: query
+        name: timestamp
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+        "400":
+          description: Invalid or missing timestamp
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Find events starting after a timestamp
+      tags:
+      - events
+  /events/before:
+    get:
+      parameters:
+      - description: RFC3339 timestamp
+        in: query
+        name: timestamp
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+        "400":
+          description: Invalid or missing timestamp
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Find events starting before a timestamp
+      tags:
+      - events
+  /events/between:
+    get:
+      parameters:
+      - description: RFC3339 start timestamp
+        in: query
+        name: start
+        required: true
+        type: string
+      - description: RFC3339 end timestamp
+        in: query
+        name: end
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+        "400":
+          description: Invalid or missing timestamps
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Find events starting between two timestamps
+      tags:
+      - events
+  /events/name/{name}:
+    get:
+      parameters:
+      - description: Event name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Event'
+        "404":
+          description: Event not found
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Find an event by exact name
+      tags:
+      - events
+  /events/search:
+    get:
+      parameters:
+      - description: Search term
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+        "400":
+          description: Missing search term
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Search events by partial name, description, or location
+      tags:
+      - events
   /participants:
     get:
       produces:

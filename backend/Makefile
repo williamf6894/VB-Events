@@ -1,7 +1,9 @@
 .PHONY: docs build run tidy localdb
 
+SWAG := $(shell go env GOPATH)/bin/swag
+
 docs:
-	$(GOPATH)/bin/swag init -g cmd/main.go -o docs --parseInternal
+	$(SWAG) init -g cmd/main.go -o docs --parseInternal
 
 build:
 	go build ./...

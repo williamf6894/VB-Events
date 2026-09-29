@@ -18,10 +18,10 @@ import (
 	"github.com/williamf6894/VB-Events/internal/services"
 )
 
-//	@title			VB-Events API
-//	@version		1.0
-//	@description	Events management API
-//	@BasePath		/
+// @title			VB-Events API
+// @version		1.0
+// @description	Events management API
+// @BasePath		/
 const swaggerInitializer = `window.onload = function() {
   window.ui = SwaggerUIBundle({
     url: "/swagger/doc.json",
@@ -39,8 +39,10 @@ const swaggerInitializer = `window.onload = function() {
 };`
 
 func main() {
-	cfg := config.Load()
+  // Config
+  cfg := config.Load()
 
+  // Database
 	database, err := db.InitDB(cfg)
 	if err != nil {
 		panic("failed to connect to database")
@@ -50,21 +52,43 @@ func main() {
 		panic("failed to migrate database")
 	}
 
+	// Wiring up system
 	participantRepo := repository.NewParticipantRepository(database)
 	participantService := services.NewParticipantService(participantRepo)
 	participantHandler := handlers.NewParticipantHandler(participantService)
 
+	eventRepo := repository.NewEventRepository(database)
+	eventService := services.NewEventService(eventRepo)
+	eventHandler := handlers.NewEventHandler(eventService)
+
 	e := echo.New()
+
+	// Middleware
+
+	// Depending on how much you want to log and how many logs you are sending
+	// you may want to comment out this request logger.
 	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Gzip())
 	e.Use(echoMiddleware.Recover())
 
+	// API
 	e.POST("/participants", participantHandler.Create)
 	e.GET("/participants", participantHandler.List)
 	e.GET("/participants/:id", participantHandler.FindByID)
 	e.PUT("/participants/:id", participantHandler.Update)
 	e.DELETE("/participants/:id", participantHandler.Delete)
 
+	e.POST("/events", eventHandler.Create)
+	e.GET("/events", eventHandler.List)
+	e.GET("/events/name/:name", eventHandler.FindByName)
+	e.GET("/events/search", eventHandler.Search)
+	e.GET("/events/before", eventHandler.FindAllBefore)
+	e.GET("/events/after", eventHandler.FindAllAfter)
+	e.GET("/events/between", eventHandler.FindAllBetween)
+	e.PUT("/events/:id", eventHandler.Update)
+	e.DELETE("/events/:id", eventHandler.Delete)
+
+	// Swagger Documentation
 	e.GET("/swagger", func(c *echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, "/swagger/")
 	})
@@ -80,6 +104,7 @@ func main() {
 	})
 	e.GET("/swagger/*", echo.WrapHandler(http.StripPrefix("/swagger", http.FileServer(http.FS(swaggerFiles.FS)))))
 
+	// Initial Server
 	if err := e.Start(cfg.APIHost + ":" + cfg.APIPort); err != nil {
 		slog.Error("server failed to start", "error", err)
 	}
