@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/labstack/echo/v5"
 	echoMiddleware "github.com/labstack/echo/v5/middleware"
@@ -39,10 +43,10 @@ const swaggerInitializer = `window.onload = function() {
 };`
 
 func main() {
-  // Config
-  cfg := config.Load()
+	// Config
+	cfg := config.Load()
 
-  // Database
+	// Database
 	database, err := db.InitDB(cfg)
 	if err != nil {
 		panic("failed to connect to database")
@@ -67,8 +71,21 @@ func main() {
 
 	// Depending on how much you want to log and how many logs you are sending
 	// you may want to comment out this request logger.
+	e.Pre(echoMiddleware.RemoveTrailingSlash())
 	e.Use(echoMiddleware.RequestLogger())
+	e.Use(echoMiddleware.SecureWithConfig(echoMiddleware.SecureConfig{
+		XSSProtection:         "1, mode=block",
+		ContentTypeNosniff:    "nosniff",
+		XFrameOptions:         "SAMEORIGIN",
+		ContentSecurityPolicy: "default-src 'self'; 'unsafe-inline'; 'unsafe-eval' ",
+	}))
 	e.Use(echoMiddleware.Gzip())
+	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+		AllowOrigins: cfg.CORSOrigins,
+		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
+		AllowHeaders: []string{"Content-Type"},
+		MaxAge:       300,
+	}))
 	e.Use(echoMiddleware.Recover())
 
 	// API
@@ -104,8 +121,14 @@ func main() {
 	})
 	e.GET("/swagger/*", echo.WrapHandler(http.StripPrefix("/swagger", http.FileServer(http.FS(swaggerFiles.FS)))))
 
-	// Initial Server
-	if err := e.Start(cfg.APIHost + ":" + cfg.APIPort); err != nil {
-		slog.Error("server failed to start", "error", err)
+	// Start Server
+	slog.Info("Starting server")
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	err = echo.StartConfig{Address: ":" + cfg.APIPort}.Start(ctx, e)
+	if err != nil {
+		slog.Error("server exited", "error", err)
 	}
 }
