@@ -5,7 +5,15 @@ A simple event management platform
 ### Backend (API)
 
 - CRUD for Events
+  - Name
+  - Description
+  - Date/Time
+  - Location
+  - Capacity
+  - Duration
 - CRUD for Participants
+  - Name
+  - Email
 - Read for all events
   - with filters by date, status, past/future, etc
 - Health Check

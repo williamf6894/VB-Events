@@ -3,6 +3,8 @@ module github.com/williamf6894/VB-Events
 go 1.27.0
 
 require (
+	github.com/joho/godotenv v1.5.1
+	github.com/labstack/echo/v5 v5.4.0
 	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
 )
@@ -16,4 +18,5 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 )

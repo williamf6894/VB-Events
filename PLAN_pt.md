@@ -5,7 +5,15 @@ Uma plataforma simples de gestão de eventos
 ### Backend (API)
 
 - CRUD de eventos
+  - Nome [Name]
+  - Descricao [Description]
+  - Data/Hora [Date/Time]
+  - Local [Location]
+  - Capacidade [Capacity]
+  - Duracao [Duration]
 - CRUD de participantes
+  - Nome [Name]
+  - Email 
 - Listagem de todos os eventos
   - com filtros por data, status, eventos passados/futuros, etc.
 - Verificação de saúde (Health Check)
