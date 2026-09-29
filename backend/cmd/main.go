@@ -80,6 +80,7 @@ func main() {
 		ContentSecurityPolicy: "default-src 'self'; 'unsafe-inline'; 'unsafe-eval' ",
 	}))
 	e.Use(echoMiddleware.Gzip())
+	e.Use(echoMiddleware.RateLimiter(echoMiddleware.NewRateLimiterMemoryStore(40.0)))
 	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 		AllowOrigins: cfg.CORSOrigins,
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
