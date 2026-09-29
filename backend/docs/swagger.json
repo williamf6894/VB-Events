@@ -300,6 +300,50 @@
             }
         },
         "/events/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get an event by ID with its participants",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Event"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid event id",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "Event not found",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
             "put": {
                 "consumes": [
                     "application/json"

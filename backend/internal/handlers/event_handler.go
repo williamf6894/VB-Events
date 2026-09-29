@@ -89,6 +89,33 @@ func (h *EventHandler) List(c *echo.Context) error {
 	return c.JSON(http.StatusOK, events)
 }
 
+// FindEventByID godoc
+// @Summary      Get an event by ID with its participants
+// @Tags         events
+// @Produce      json
+// @Param        id path string true "Event ID (UUID)"
+// @Success      200 {object} models.Event
+// @Failure      400 {object} object "Invalid event id"
+// @Failure      404 {object} object "Event not found"
+// @Failure      500 {object} object "Internal error"
+// @Router       /events/{id} [get]
+func (h *EventHandler) FindByID(c *echo.Context) error {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid event id")
+	}
+
+	event, err := h.service.FindByID(id)
+	if err != nil {
+		if errors.Is(err, services.ErrEventNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to find event")
+	}
+
+	return c.JSON(http.StatusOK, event)
+}
+
 // FindEventByName godoc
 // @Summary      Find an event by exact name
 // @Tags         events

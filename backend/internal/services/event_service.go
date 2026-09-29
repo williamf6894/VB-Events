@@ -68,6 +68,17 @@ func (s *EventService) ListAll() ([]models.Event, error) {
 	return events, nil
 }
 
+func (s *EventService) FindByID(id uuid.UUID) (*models.Event, error) {
+	event, err := s.repo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrEventNotFound
+		}
+		return nil, err
+	}
+	return event, nil
+}
+
 func (s *EventService) FindByName(name string) (*models.Event, error) {
 	event, err := s.repo.FindByName(name)
 	if err != nil {

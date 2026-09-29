@@ -97,6 +97,7 @@ func main() {
 
 	e.POST("/events", eventHandler.Create)
 	e.GET("/events", eventHandler.List)
+	e.GET("/events/:id", eventHandler.FindByID)
 	e.GET("/events/name/:name", eventHandler.FindByName)
 	e.GET("/events/search", eventHandler.Search)
 	e.GET("/events/before", eventHandler.FindAllBefore)
