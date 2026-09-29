@@ -21,8 +21,8 @@ func InitDB() (*gorm.DB, error) {
 func getDSN() string {
 	host := getEnv("DB_HOST", "localhost")
 	port := getEnv("DB_PORT", "5432")
-	user := getEnv("DB_USER", "postgres")
-	password := getEnv("DB_PASSWORD", "postgres")
+	user := getEnv("DB_USER", "vb-events")
+	password := getEnv("DB_PASSWORD", "vbevents")
 	database := getEnv("DB_DATABASE", "events")
 	dsn := "host=" + host + " port=" + port + " user=" + user + " password=" + password + " dbname=" + database
 	return dsn
