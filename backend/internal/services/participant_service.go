@@ -4,9 +4,9 @@ import (
 	"errors"
 	"log/slog"
 
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"uuid"
+
+	"gorm.io/gorm"
 
 	"github.com/williamf6894/VB-Events/internal/models"
 	"github.com/williamf6894/VB-Events/internal/repository"
@@ -26,41 +26,6 @@ type ParticipantService struct {
 
 func NewParticipantService(repo *repository.ParticipantRepository) *ParticipantService {
 	return &ParticipantService{repo: repo}
-}
-
-func hashPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hash), nil
-}
-
-func validParticipant(p *models.Participant) bool {
-	return p.Name != "" && p.Email != "" && len(p.Password) >= minPasswordLength
-}
-
-func (s *ParticipantService) Create(participant *models.Participant) error {
-	if !validParticipant(participant) {
-		return ErrInvalidParticipant
-	}
-
-	existing, err := s.repo.FindByEmail(participant.Email)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-	if existing != nil {
-		return ErrEmailTaken
-	}
-
-	hash, err := hashPassword(participant.Password)
-	if err != nil {
-		slog.Error("failed to hash password", "error", err)
-		return err
-	}
-	participant.Password = hash
-
-	return s.repo.Create(participant)
 }
 
 func (s *ParticipantService) FindByID(id uuid.UUID) (*models.Participant, error) {

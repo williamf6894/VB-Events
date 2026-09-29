@@ -65,12 +65,92 @@ definitions:
       name:
         type: string
     type: object
+  services.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  services.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
 info:
   contact: {}
   description: Events management API
   title: VB-Events API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Returns a signed JWT valid for 24 hours
+      parameters:
+      - description: Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/services.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.TokenResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Log in with email and password
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a participant account with a name, unique email and password
+      parameters:
+      - description: Participant to register
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.participantRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Participant'
+        "400":
+          description: Invalid body, or missing name/email/password (min 8 chars)
+          schema:
+            type: object
+        "409":
+          description: Email already in use
+          schema:
+            type: object
+        "500":
+          description: Internal error
+          schema:
+            type: object
+      summary: Register a new participant
+      tags:
+      - auth
   /events:
     get:
       produces:
@@ -386,39 +466,6 @@ paths:
           schema:
             type: object
       summary: List all participants
-      tags:
-      - participants
-    post:
-      consumes:
-      - application/json
-      description: Registers a participant with a name and unique email
-      parameters:
-      - description: Participant to create
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.participantRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.Participant'
-        "400":
-          description: Invalid body, or missing name/email
-          schema:
-            type: object
-        "409":
-          description: Email already in use
-          schema:
-            type: object
-        "500":
-          description: Internal error
-          schema:
-            type: object
-      summary: Create a new participant
       tags:
       - participants
   /participants/{id}:

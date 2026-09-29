@@ -46,6 +46,10 @@ func main() {
 	// Config
 	cfg := config.Load()
 
+	if cfg.JWTSecret == "" {
+		panic("JWT_SECRET must be set (put it in .env or the environment)")
+	}
+
 	// Database
 	database, err := db.InitDB(cfg)
 	if err != nil {
@@ -65,6 +69,8 @@ func main() {
 	eventService := services.NewEventService(eventRepo)
 	eventHandler := handlers.NewEventHandler(eventService)
 
+	authService := services.NewAuthService(participantRepo, cfg)
+	authHandler := handlers.NewAuthHandler(authService)
 	healthHandler := handlers.NewHealthHandler(database)
 
 	// Middleware
@@ -124,7 +130,9 @@ func main() {
 	e.GET("/healthz", healthHandler.Check)
 
 	// API
-	e.POST("/participants", participantHandler.Create)
+	e.POST("/auth/register", authHandler.Register)
+	e.POST("/auth/login", authHandler.Login)
+
 	e.GET("/participants", participantHandler.List)
 	e.GET("/participants/:id", participantHandler.FindByID)
 	e.PUT("/participants/:id", participantHandler.Update)

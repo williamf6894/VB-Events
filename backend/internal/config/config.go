@@ -17,6 +17,7 @@ type Config struct {
 	APIHost     string
 	APIPort     string
 	CORSOrigins []string
+	JWTSecret   string
 }
 
 func Load() Config {
@@ -32,6 +33,7 @@ func Load() Config {
 		APIHost:     getEnv("API_HOST", "localhost"),
 		APIPort:     getEnv("API_PORT", "8200"),
 		CORSOrigins: getEnvSlice("CORS_ORIGINS", []string{"http://localhost:5173"}),
+		JWTSecret:   getEnv("JWT_SECRET", "default-secret-change-me"),
 	}
 }
 

@@ -25,6 +25,7 @@ services:
       DB_DATABASE: events
       API_PORT: "8200"
       CORS_ORIGINS: "http://localhost:8080"
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env or the environment}
     depends_on:
       postgres:
         condition: service_healthy

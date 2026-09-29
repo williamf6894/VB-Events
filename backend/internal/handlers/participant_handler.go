@@ -19,50 +19,6 @@ func NewParticipantHandler(service *services.ParticipantService) *ParticipantHan
 	return &ParticipantHandler{service: service}
 }
 
-type participantRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password" example:"min 8 characters"`
-}
-
-// CreateParticipant godoc
-// @Summary      Create a new participant
-// @Description  Registers a participant with a name and unique email
-// @Tags         participants
-// @Accept       json
-// @Produce      json
-// @Param        request body participantRequest true "Participant to create"
-// @Success      201 {object} models.Participant
-// @Failure      400 {object} object "Invalid body, or missing name/email"
-// @Failure      409 {object} object "Email already in use"
-// @Failure      500 {object} object "Internal error"
-// @Router       /participants [post]
-func (h *ParticipantHandler) Create(c *echo.Context) error {
-	var req participantRequest
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
-	}
-
-	participant := &models.Participant{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: req.Password,
-	}
-
-	if err := h.service.Create(participant); err != nil {
-		switch {
-		case errors.Is(err, services.ErrInvalidParticipant):
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-		case errors.Is(err, services.ErrEmailTaken):
-			return echo.NewHTTPError(http.StatusConflict, err.Error())
-		default:
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to create participant")
-		}
-	}
-
-	return c.JSON(http.StatusCreated, participant)
-}
-
 // ListParticipants godoc
 // @Summary      List all participants
 // @Tags         participants
