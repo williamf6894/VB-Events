@@ -1,4 +1,4 @@
-.PHONY: docs build run tidy
+.PHONY: docs build run tidy localdb
 
 docs:
 	$(GOPATH)/bin/swag init -g cmd/main.go -o docs --parseInternal
@@ -11,3 +11,6 @@ run:
 
 tidy:
 	go mod tidy
+
+localdb:
+	../testing/start-local-db.sh

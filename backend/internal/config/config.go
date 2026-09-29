@@ -12,6 +12,7 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBDatabase string
+	SSLMode    string
 	APIHost    string
 	APIPort    string
 }
@@ -22,9 +23,10 @@ func Load() Config {
 	return Config{
 		DBHost:     getEnv("DB_HOST", "localhost"),
 		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", "vb-events"),
+		DBUser:     getEnv("DB_USER", "vbevents"),
 		DBPassword: getEnv("DB_PASSWORD", "vbevents"),
 		DBDatabase: getEnv("DB_DATABASE", "events"),
+		SSLMode:    getEnv("SSL_MODE", "disable"),
 		APIHost:    getEnv("API_HOST", "localhost"),
 		APIPort:    getEnv("API_PORT", "8200"),
 	}
