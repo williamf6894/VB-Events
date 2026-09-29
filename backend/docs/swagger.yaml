@@ -16,6 +16,15 @@ definitions:
         format: date-time
         type: string
     type: object
+  handlers.healthResponse:
+    properties:
+      checks:
+        additionalProperties:
+          type: string
+        type: object
+      status:
+        type: string
+    type: object
   handlers.participantRequest:
     properties:
       email:
@@ -341,6 +350,23 @@ paths:
       summary: Search events by partial name, description, or location
       tags:
       - events
+  /healthz:
+    get:
+      description: Returns service status and verifies database connectivity
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.healthResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/handlers.healthResponse'
+      summary: Service health check
+      tags:
+      - health
   /participants:
     get:
       produces:

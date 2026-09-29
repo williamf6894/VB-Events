@@ -65,14 +65,45 @@ func main() {
 	eventService := services.NewEventService(eventRepo)
 	eventHandler := handlers.NewEventHandler(eventService)
 
-	e := echo.New()
+	healthHandler := handlers.NewHealthHandler(database)
 
 	// Middleware
 
+	e := echo.New()
+	e.Pre(echoMiddleware.RemoveTrailingSlash())
 	// Depending on how much you want to log and how many logs you are sending
 	// you may want to comment out this request logger.
-	e.Pre(echoMiddleware.RemoveTrailingSlash())
-	e.Use(echoMiddleware.RequestLogger())
+	e.Use(echoMiddleware.RequestLoggerWithConfig(echoMiddleware.RequestLoggerConfig{
+
+		// Skipping /healthz because its noisy
+		Skipper: func(c *echo.Context) bool {
+			return c.Request().URL.Path == "/healthz"
+		},
+		LogStatus:   true,
+		LogURI:      true,
+		HandleError: true,
+		LogValuesFunc: func(c *echo.Context, v echoMiddleware.RequestLoggerValues) error {
+			logger := c.Logger()
+			if v.Error == nil {
+				logger.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST",
+					slog.String("method", v.Method),
+					slog.String("uri", v.URI),
+					slog.Int("status", v.Status),
+					slog.Duration("latency", v.Latency),
+				)
+				return nil
+			}
+
+			logger.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR",
+				slog.String("method", v.Method),
+				slog.String("uri", v.URI),
+				slog.Int("status", v.Status),
+				slog.Duration("latency", v.Latency),
+				slog.String("error", v.Error.Error()),
+			)
+			return nil
+		},
+	}))
 	e.Use(echoMiddleware.SecureWithConfig(echoMiddleware.SecureConfig{
 		XSSProtection:         "1, mode=block",
 		ContentTypeNosniff:    "nosniff",
@@ -88,6 +119,9 @@ func main() {
 		MaxAge:       300,
 	}))
 	e.Use(echoMiddleware.Recover())
+
+	// Health
+	e.GET("/healthz", healthHandler.Check)
 
 	// API
 	e.POST("/participants", participantHandler.Create)

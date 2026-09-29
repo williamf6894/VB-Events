@@ -446,6 +446,32 @@ const docTemplate = `{
                 }
             }
         },
+        "/healthz": {
+            "get": {
+                "description": "Returns service status and verifies database connectivity",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Service health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.healthResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.healthResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/participants": {
             "get": {
                 "produces": [
@@ -693,6 +719,20 @@ const docTemplate = `{
                 "startTimestamp": {
                     "type": "string",
                     "format": "date-time"
+                }
+            }
+        },
+        "handlers.healthResponse": {
+            "type": "object",
+            "properties": {
+                "checks": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
