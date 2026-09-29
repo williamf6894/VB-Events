@@ -7,6 +7,7 @@ import (
 	"github.com/williamf6894/VB-Events/internal/config"
 	"github.com/williamf6894/VB-Events/internal/db"
 	"github.com/williamf6894/VB-Events/internal/models"
+	"github.com/williamf6894/VB-Events/internal/repository"
 )
 
 func main() {
@@ -35,22 +36,67 @@ func main() {
 		panic("failed to seed events")
 	}
 
+	eventRepo := repository.NewEventRepository(database)
+
+	eventByName := make(map[string]*models.Event, len(events))
 	for i := range events {
-		count := 1 + i%4
-		attendees := make([]*models.Participant, 0, count)
-		for j := 0; j < count; j++ {
-			attendees = append(attendees, &participants[(i*2+j)%len(participants)])
-		}
-		if err := database.Model(&events[i]).Association("Participants").Append(&attendees); err != nil {
-			panic("failed to associate participants with event " + events[i].Name)
+		eventByName[events[i].Name] = &events[i]
+	}
+	participantByEmail := make(map[string]*models.Participant, len(participants))
+	for i := range participants {
+		participantByEmail[participants[i].Email] = &participants[i]
+	}
+
+	registrations := []struct {
+		event       string
+		participant string
+	}{
+		{event: "North End Open", participant: "alice@example.com"},
+		{event: "North End Open", participant: "bob@example.com"},
+		{event: "North End Open", participant: "carol@example.com"},
+
+		{event: "Wednesday Indoor League", participant: "dave@example.com"},
+		{event: "Wednesday Indoor League", participant: "eve@example.com"},
+
+		{event: "Beach Volleyball Clinic", participant: "alice@example.com"},
+		{event: "Beach Volleyball Clinic", participant: "frank@example.com"},
+		{event: "Beach Volleyball Clinic", participant: "grace@example.com"},
+
+		{event: "King of the Beach", participant: "bob@example.com"},
+		{event: "King of the Beach", participant: "carol@example.com"},
+		{event: "King of the Beach", participant: "dave@example.com"},
+		{event: "King of the Beach", participant: "heather@example.com"},
+
+		{event: "Sunset Social Games", participant: "eve@example.com"},
+		{event: "Sunset Social Games", participant: "grace@example.com"},
+
+		{event: "Halloween Spooky Smash", participant: "alice@example.com"},
+		{event: "Halloween Spooky Smash", participant: "heather@example.com"},
+
+		{event: "Autumn Round Robin", participant: "frank@example.com"},
+
+		{event: "Referee Certification", participant: "grace@example.com"},
+		{event: "Referee Certification", participant: "dave@example.com"},
+	}
+
+	for _, registration := range registrations {
+		event := eventByName[registration.event]
+		participant := participantByEmail[registration.participant]
+		if err := eventRepo.AddParticipant(event.ID, participant.ID); err != nil {
+			panic("failed to register " + registration.participant + " for " + registration.event)
 		}
 	}
 
-	var eventCount, participantCount int64
+	var eventCount, participantCount, registrationCount int64
 	database.Model(&models.Event{}).Count(&eventCount)
 	database.Model(&models.Participant{}).Count(&participantCount)
+	database.Table("event_participants").Count(&registrationCount)
 
-	slog.Info("seed complete", "events", eventCount, "participants", participantCount)
+	slog.Info("seed complete",
+		"events", eventCount,
+		"participants", participantCount,
+		"registrations", registrationCount,
+	)
 }
 
 func seedParticipants() []models.Participant {

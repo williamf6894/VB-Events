@@ -161,6 +161,87 @@ func TestEventRepository_ListAll(t *testing.T) {
 	}
 }
 
+func TestEventRepository_AddAndRemoveParticipant(t *testing.T) {
+	cleanTables(t, testDB)
+	eventRepo := NewEventRepository(testDB)
+	participantRepo := NewParticipantRepository(testDB)
+
+	event := newEvent("Registration Test", tsBase)
+	if err := eventRepo.Create(event); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+	participant := newParticipant("Iris Chen", "iris@example.com")
+	if err := participantRepo.Create(participant); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+
+	if err := eventRepo.AddParticipant(event.ID, participant.ID); err != nil {
+		t.Fatalf("AddParticipant returned error: %s", err)
+	}
+
+	var count int64
+	testDB.Table("event_participants").Where("event_id = ?", event.ID).Count(&count)
+	if count != 1 {
+		t.Fatalf("expected 1 registration, got %d", count)
+	}
+
+	if err := eventRepo.RemoveParticipant(event.ID, participant.ID); err != nil {
+		t.Fatalf("RemoveParticipant returned error: %s", err)
+	}
+
+	testDB.Table("event_participants").Where("event_id = ?", event.ID).Count(&count)
+	if count != 0 {
+		t.Fatalf("expected registration removed, got %d", count)
+	}
+
+	if err := eventRepo.RemoveParticipant(event.ID, participant.ID); !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("expected ErrRecordNotFound on second remove, got: %v", err)
+	}
+
+	if err := eventRepo.AddParticipant(uuid.Nil(), participant.ID); !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("expected ErrRecordNotFound for missing event, got: %v", err)
+	}
+
+	if err := eventRepo.AddParticipant(event.ID, uuid.Nil()); !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("expected ErrRecordNotFound for missing participant, got: %v", err)
+	}
+}
+
+func TestEventRepository_FindByIDPreloadsParticipants(t *testing.T) {
+	cleanTables(t, testDB)
+	eventRepo := NewEventRepository(testDB)
+	participantRepo := NewParticipantRepository(testDB)
+
+	event := newEvent("Preload Test", tsBase)
+	if err := eventRepo.Create(event); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+	first := newParticipant("Jack Amari", "jack@example.com")
+	second := newParticipant("Kara Silva", "kara@example.com")
+	if err := participantRepo.Create(first); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+	if err := participantRepo.Create(second); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+
+	for _, participant := range []*struct {
+		ID uuid.UUID
+	}{{first.ID}, {second.ID}} {
+		if err := eventRepo.AddParticipant(event.ID, participant.ID); err != nil {
+			t.Fatalf("AddParticipant returned error: %s", err)
+		}
+	}
+
+	found, err := eventRepo.FindByID(event.ID)
+	if err != nil {
+		t.Fatalf("FindByID returned error: %s", err)
+	}
+	if len(found.Participants) != 2 {
+		t.Fatalf("expected 2 preloaded participants, got %d", len(found.Participants))
+	}
+}
+
 func TestEventRepository_FindByPartialNameDescriptionLocation(t *testing.T) {
 	cleanTables(t, testDB)
 	repo := NewEventRepository(testDB)
