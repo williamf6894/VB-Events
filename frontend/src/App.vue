@@ -1,11 +1,26 @@
 <script setup lang="ts"></script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <header class="site-header">
+    <span class="site-header__title">VB Events</span>
+  </header>
+  <main>
+    <RouterView />
+  </main>
 </template>
 
-<style scoped></style>
+<style scoped>
+.site-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.site-header__title {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #0f766e;
+}
+</style>
