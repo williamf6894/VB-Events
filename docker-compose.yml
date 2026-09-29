@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vbevents
+      POSTGRES_PASSWORD: vbevents
+      POSTGRES_DB: events
+    ports:
+      - "5432:5432"
+    volumes:
+      - vb-events_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vbevents -d events"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: vbevents
+      DB_PASSWORD: vbevents
+      DB_DATABASE: events
+      API_PORT: "8200"
+      CORS_ORIGINS: "http://localhost:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8200:8200"
+
+  frontend:
+    build: ./frontend
+    environment:
+      API_UPSTREAM: backend:8200
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+
+volumes:
+  vb-events_postgres_data:
+    external: true
