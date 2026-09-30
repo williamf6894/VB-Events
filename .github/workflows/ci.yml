@@ -119,7 +119,7 @@ jobs:
     needs: [docker-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    environment: production
+    environment: QA
     steps:
       - name: Deploy over SSH
         env:
