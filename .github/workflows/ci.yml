@@ -136,6 +136,7 @@ jobs:
 
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$SSH_USER@$SSH_HOST" "
             set -e
+            git config --global --add safe.directory /srv/vb-events
             cd /srv/vb-events
             git pull --ff-only
             IMAGE_TAG=$IMAGE_TAG docker compose pull backend frontend
