@@ -155,6 +155,7 @@ func main() {
 	e.PUT("/events/:id", eventHandler.Update)
 	e.DELETE("/events/:id", eventHandler.Delete)
 	e.POST("/events/:id/participants", eventHandler.Join, authMiddleware)
+	e.DELETE("/events/:id/participants", eventHandler.Leave, authMiddleware)
 
 	// Swagger Documentation
 	e.GET("/swagger", func(c *echo.Context) error {

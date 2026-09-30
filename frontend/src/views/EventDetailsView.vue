@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import EventFormDialog from '@/components/EventFormDialog.vue'
-import { deleteEvent, getEvent, joinEvent } from '@/services/events'
+import { deleteEvent, getEvent, joinEvent, leaveEvent } from '@/services/events'
 import { useAuthStore } from '@/stores/auth'
 import type { Event } from '@/types/event'
 
@@ -17,6 +17,7 @@ const notFound = ref(false)
 const showEditDialog = ref(false)
 const deleting = ref(false)
 const joining = ref(false)
+const leaving = ref(false)
 const joinError = ref<string | null>(null)
 
 async function loadEvent() {
@@ -68,8 +69,18 @@ const isParticipating = computed(
 
 const isFull = computed(() => spotsAvailable.value <= 0)
 
+const hasStarted = computed(() =>
+  event.value ? new Date(event.value.startTimestamp).getTime() <= Date.now() : false,
+)
+
+const joinDisabledReason = computed(() => {
+  if (hasStarted.value) return 'Event Started'
+  if (isFull.value) return 'Event Full'
+  return null
+})
+
 async function onParticipate() {
-  if (!event.value || joining.value || isParticipating.value || isFull.value) return
+  if (!event.value || joining.value || isParticipating.value || joinDisabledReason.value) return
 
   joining.value = true
   joinError.value = null
@@ -81,6 +92,22 @@ async function onParticipate() {
     joinError.value = err instanceof Error ? err.message : 'Failed to join event.'
   } finally {
     joining.value = false
+  }
+}
+
+async function onLeave() {
+  if (!event.value || leaving.value || !isParticipating.value) return
+
+  leaving.value = true
+  joinError.value = null
+
+  try {
+    await leaveEvent(event.value.id)
+    await loadEvent()
+  } catch (err) {
+    joinError.value = err instanceof Error ? err.message : 'Failed to leave event.'
+  } finally {
+    leaving.value = false
   }
 }
 
@@ -120,13 +147,23 @@ function formatDate(timestamp: string): string {
             v-if="!isParticipating"
             class="event-details__participate"
             type="button"
-            :disabled="isFull || joining"
-            :title="isFull ? 'This event is at capacity' : undefined"
+            :disabled="joinDisabledReason !== null || joining"
+            :title="joinDisabledReason ? `Cannot join: ${joinDisabledReason}` : undefined"
             @click="onParticipate"
           >
-            {{ joining ? 'Joining…' : isFull ? 'Event Full' : 'Participate' }}
+            {{ joining ? 'Joining…' : joinDisabledReason ?? 'Participate' }}
           </button>
-          <span v-else class="event-details__going">✓ You're going</span>
+          <template v-else>
+            <span class="event-details__going">✓ You're going</span>
+            <button
+              class="event-details__leave"
+              type="button"
+              :disabled="leaving"
+              @click="onLeave"
+            >
+              {{ leaving ? 'Leaving…' : 'Leave' }}
+            </button>
+          </template>
           <button class="event-details__edit" type="button" @click="showEditDialog = true">
             Edit
           </button>
@@ -252,6 +289,26 @@ function formatDate(timestamp: string): string {
   color: #0f766e;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.event-details__leave {
+  border: 1px solid #fecaca;
+  border-radius: 0.4rem;
+  padding: 0.45rem 1rem;
+  background: #fff;
+  color: #dc2626;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.event-details__leave:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.event-details__leave:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .event-details__join-error {

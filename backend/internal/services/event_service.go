@@ -17,6 +17,8 @@ var (
 	ErrInvalidEvent      = errors.New("invalid event data")
 	ErrAlreadyRegistered = errors.New("already registered for this event")
 	ErrEventFull         = errors.New("event is at capacity")
+	ErrEventStarted      = errors.New("event has already started")
+	ErrNotRegistered     = errors.New("not registered for this event")
 )
 
 type EventService struct {
@@ -90,6 +92,10 @@ func (s *EventService) JoinEvent(eventID, participantID uuid.UUID) error {
 		return err
 	}
 
+	if !event.StartTimestamp.After(time.Now()) {
+		return ErrEventStarted
+	}
+
 	for _, participant := range event.Participants {
 		if participant.ID == participantID {
 			return ErrAlreadyRegistered
@@ -101,6 +107,25 @@ func (s *EventService) JoinEvent(eventID, participantID uuid.UUID) error {
 	}
 
 	return s.repo.AddParticipant(eventID, participantID)
+}
+
+func (s *EventService) LeaveEvent(eventID, participantID uuid.UUID) error {
+	_, err := s.repo.FindByID(eventID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrEventNotFound
+		}
+		return err
+	}
+
+	if err := s.repo.RemoveParticipant(eventID, participantID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotRegistered
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (s *EventService) FindByName(name string) (*models.Event, error) {

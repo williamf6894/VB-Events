@@ -126,7 +126,7 @@ func (h *EventHandler) FindByID(c *echo.Context) error {
 // @Failure      400 {object} object "Invalid event id"
 // @Failure      401 {object} object "Not authenticated"
 // @Failure      404 {object} object "Event not found"
-// @Failure      409 {object} object "Already registered, or event is at capacity"
+// @Failure      409 {object} object "Already registered, event is at capacity, or event has already started"
 // @Failure      500 {object} object "Internal error"
 // @Security     BearerAuth
 // @Router       /events/{id}/participants [post]
@@ -149,8 +149,46 @@ func (h *EventHandler) Join(c *echo.Context) error {
 			return echo.NewHTTPError(http.StatusConflict, err.Error())
 		case errors.Is(err, services.ErrEventFull):
 			return echo.NewHTTPError(http.StatusConflict, err.Error())
+		case errors.Is(err, services.ErrEventStarted):
+			return echo.NewHTTPError(http.StatusConflict, err.Error())
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to join event")
+		}
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// LeaveEvent godoc
+// @Summary      Remove the current user's participation from an event
+// @Tags         events
+// @Param        id path string true "Event ID (UUID)"
+// @Success      204 "No content"
+// @Failure      400 {object} object "Invalid event id"
+// @Failure      401 {object} object "Not authenticated"
+// @Failure      404 {object} object "Event not found, or not registered"
+// @Failure      500 {object} object "Internal error"
+// @Security     BearerAuth
+// @Router       /events/{id}/participants [delete]
+func (h *EventHandler) Leave(c *echo.Context) error {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid event id")
+	}
+
+	participant := middleware.ParticipantFrom(c)
+	if participant == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "not authenticated")
+	}
+
+	if err := h.service.LeaveEvent(id, participant.ID); err != nil {
+		switch {
+		case errors.Is(err, services.ErrEventNotFound):
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		case errors.Is(err, services.ErrNotRegistered):
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to leave event")
 		}
 	}
 

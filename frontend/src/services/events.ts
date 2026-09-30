@@ -59,16 +59,28 @@ export async function joinEvent(id: string): Promise<void> {
     method: 'POST',
     headers: authHeaders(),
   })
-  if (!response.ok && response.status !== 204) {
-    let message = 'Failed to join event.'
-    try {
-      const body = (await response.json()) as { message?: string }
-      if (body.message) {
-        message = body.message
-      }
-    } catch {
-      // keep default message
+  await expectOk(response, 'Failed to join event.')
+}
+
+export async function leaveEvent(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/events/${id}/participants`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  await expectOk(response, 'Failed to leave event.')
+}
+
+async function expectOk(response: Response, fallbackMessage: string): Promise<void> {
+  if (response.ok || response.status === 204) return
+
+  let message = fallbackMessage
+  try {
+    const body = (await response.json()) as { message?: string }
+    if (body.message) {
+      message = body.message
     }
-    throw new Error(message)
+  } catch {
+    // keep default message
   }
+  throw new Error(message)
 }
