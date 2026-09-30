@@ -2,7 +2,6 @@ package repository
 
 import (
 	"log/slog"
-	"time"
 	"uuid"
 
 	"gorm.io/gorm"
@@ -51,10 +50,34 @@ func (r *EventRepository) DeleteByID(id uuid.UUID) error {
 	return nil
 }
 
-func (r *EventRepository) ListAll() ([]models.Event, error) {
+func (r *EventRepository) List(query models.EventQuery) ([]models.Event, error) {
+	db := r.db.Model(&models.Event{})
+
+	if query.Search != "" {
+		pattern := "%" + query.Search + "%"
+		db = db.Where("name ILIKE ? OR description ILIKE ? OR location ILIKE ?", pattern, pattern, pattern)
+	}
+
+	if query.After != nil {
+		db = db.Where("start_timestamp > ?", *query.After)
+	}
+
+	if query.Before != nil {
+		db = db.Where("start_timestamp < ?", *query.Before)
+	}
+
+	if query.Full != nil {
+		countExpr := "(SELECT COUNT(*) FROM event_participants WHERE event_participants.event_id = events.id)"
+		if *query.Full {
+			db = db.Where(countExpr + " >= events.capacity")
+		} else {
+			db = db.Where(countExpr + " < events.capacity")
+		}
+	}
+
 	var events []models.Event
-	if err := r.db.Order("start_timestamp").Find(&events).Error; err != nil {
-		slog.Error("failed to list events", "error", err)
+	if err := db.Order("start_timestamp").Find(&events).Error; err != nil {
+		slog.Error("failed to list events", "error", err, "query", query.Search)
 		return nil, err
 	}
 	return events, nil
@@ -104,49 +127,4 @@ func (r *EventRepository) RemoveParticipant(eventID, participantID uuid.UUID) er
 		return gorm.ErrRecordNotFound
 	}
 	return nil
-}
-
-func (r *EventRepository) FindByPartialNameDescriptionLocation(query string) ([]models.Event, error) {
-	var events []models.Event
-	pattern := "%" + query + "%"
-	if err := r.db.Where("name ILIKE ? OR description ILIKE ? OR location ILIKE ?", pattern, pattern, pattern).
-		Order("start_timestamp").
-		Find(&events).Error; err != nil {
-		slog.Error("failed to search events", "error", err, "query", query)
-		return nil, err
-	}
-	return events, nil
-}
-
-func (r *EventRepository) FindAllBefore(timestamp time.Time) ([]models.Event, error) {
-	var events []models.Event
-	if err := r.db.Where("start_timestamp < ?", timestamp).
-		Order("start_timestamp").
-		Find(&events).Error; err != nil {
-		slog.Error("failed to find events before timestamp", "error", err, "timestamp", timestamp)
-		return nil, err
-	}
-	return events, nil
-}
-
-func (r *EventRepository) FindAllAfter(timestamp time.Time) ([]models.Event, error) {
-	var events []models.Event
-	if err := r.db.Where("start_timestamp > ?", timestamp).
-		Order("start_timestamp").
-		Find(&events).Error; err != nil {
-		slog.Error("failed to find events after timestamp", "error", err, "timestamp", timestamp)
-		return nil, err
-	}
-	return events, nil
-}
-
-func (r *EventRepository) FindAllBetween(start, end time.Time) ([]models.Event, error) {
-	var events []models.Event
-	if err := r.db.Where("start_timestamp BETWEEN ? AND ?", start, end).
-		Order("start_timestamp").
-		Find(&events).Error; err != nil {
-		slog.Error("failed to find events between timestamps", "error", err, "start", start, "end", end)
-		return nil, err
-	}
-	return events, nil
 }

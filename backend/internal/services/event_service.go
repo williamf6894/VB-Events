@@ -63,10 +63,10 @@ func (s *EventService) DeleteByID(id uuid.UUID) error {
 	return nil
 }
 
-func (s *EventService) ListAll() ([]models.Event, error) {
-	events, err := s.repo.ListAll()
+func (s *EventService) List(query models.EventQuery) ([]models.Event, error) {
+	events, err := s.repo.List(query)
 	if err != nil {
-		slog.Error("failed to list events", "error", err)
+		slog.Error("failed to list events", "error", err, "search", query.Search)
 		return nil, err
 	}
 	return events, nil
@@ -137,40 +137,4 @@ func (s *EventService) FindByName(name string) (*models.Event, error) {
 		return nil, err
 	}
 	return event, nil
-}
-
-func (s *EventService) FindByPartialNameDescriptionLocation(query string) ([]models.Event, error) {
-	events, err := s.repo.FindByPartialNameDescriptionLocation(query)
-	if err != nil {
-		slog.Error("failed to search events", "error", err, "query", query)
-		return nil, err
-	}
-	return events, nil
-}
-
-func (s *EventService) FindAllBefore(timestamp time.Time) ([]models.Event, error) {
-	events, err := s.repo.FindAllBefore(timestamp)
-	if err != nil {
-		slog.Error("failed to find events before timestamp", "error", err, "timestamp", timestamp)
-		return nil, err
-	}
-	return events, nil
-}
-
-func (s *EventService) FindAllAfter(timestamp time.Time) ([]models.Event, error) {
-	events, err := s.repo.FindAllAfter(timestamp)
-	if err != nil {
-		slog.Error("failed to find events after timestamp", "error", err, "timestamp", timestamp)
-		return nil, err
-	}
-	return events, nil
-}
-
-func (s *EventService) FindAllBetween(start, end time.Time) ([]models.Event, error) {
-	events, err := s.repo.FindAllBetween(start, end)
-	if err != nil {
-		slog.Error("failed to find events between timestamps", "error", err, "start", start, "end", end)
-		return nil, err
-	}
-	return events, nil
 }

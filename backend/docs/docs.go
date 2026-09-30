@@ -151,13 +151,40 @@ const docTemplate = `{
         },
         "/events": {
             "get": {
+                "description": "All filters are optional and combine; results are ordered by start time",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "events"
                 ],
-                "summary": "List all events",
+                "summary": "List events with optional filters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Partial, case-insensitive match on name, description or location",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp — only events starting after this",
+                        "name": "after",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 timestamp — only events starting before this",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by fullness: true = only full events, false = only events with space remaining",
+                        "name": "full",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -166,6 +193,12 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/models.Event"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid filter value",
+                        "schema": {
+                            "type": "object"
                         }
                     },
                     "500": {
@@ -221,142 +254,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/events/after": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "Find events starting after a timestamp",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "RFC3339 timestamp",
-                        "name": "timestamp",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Event"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid or missing timestamp",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
-        },
-        "/events/before": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "Find events starting before a timestamp",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "RFC3339 timestamp",
-                        "name": "timestamp",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Event"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid or missing timestamp",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
-        },
-        "/events/between": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "Find events starting between two timestamps",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "RFC3339 start timestamp",
-                        "name": "start",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "RFC3339 end timestamp",
-                        "name": "end",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Event"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid or missing timestamps",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
-        },
         "/events/name/{name}": {
             "get": {
                 "produces": [
@@ -384,49 +281,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Event not found",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal error",
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                }
-            }
-        },
-        "/events/search": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "Search events by partial name, description, or location",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Search term",
-                        "name": "q",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Event"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Missing search term",
                         "schema": {
                             "type": "object"
                         }
@@ -490,9 +344,11 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
+                    "application/json",
                     "application/json"
                 ],
                 "tags": [
+                    "events",
                     "events"
                 ],
                 "summary": "Update an event",

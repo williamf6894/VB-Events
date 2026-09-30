@@ -147,7 +147,7 @@ func TestEventRepository_DeleteByID(t *testing.T) {
 	}
 }
 
-func TestEventRepository_ListAll(t *testing.T) {
+func TestEventRepository_List(t *testing.T) {
 	cleanTables(t, testDB)
 	repo := NewEventRepository(testDB)
 
@@ -161,9 +161,9 @@ func TestEventRepository_ListAll(t *testing.T) {
 		t.Fatalf("Create returned error: %s", err)
 	}
 
-	events, err := repo.ListAll()
+	events, err := repo.List(models.EventQuery{})
 	if err != nil {
-		t.Fatalf("ListAll returned error: %s", err)
+		t.Fatalf("List returned error: %s", err)
 	}
 	if len(events) != 3 {
 		t.Fatalf("expected 3 events, got %d", len(events))
@@ -257,7 +257,7 @@ func TestEventRepository_FindByIDPreloadsParticipants(t *testing.T) {
 	}
 }
 
-func TestEventRepository_FindByPartialNameDescriptionLocation(t *testing.T) {
+func TestEventRepository_ListSearch(t *testing.T) {
 	cleanTables(t, testDB)
 	repo := NewEventRepository(testDB)
 
@@ -282,40 +282,40 @@ func TestEventRepository_FindByPartialNameDescriptionLocation(t *testing.T) {
 		t.Fatalf("Create returned error: %s", err)
 	}
 
-	events, err := repo.FindByPartialNameDescriptionLocation("beach")
+	events, err := repo.List(models.EventQuery{Search: "beach"})
 	if err != nil {
-		t.Fatalf("FindByPartialNameDescriptionLocation returned error: %s", err)
+		t.Fatalf("List returned error: %s", err)
 	}
 	if len(events) != 3 {
 		t.Fatalf("expected 3 matches (name, description, location), got %d", len(events))
 	}
 
-	events, err = repo.FindByPartialNameDescriptionLocation("volley")
+	events, err = repo.List(models.EventQuery{Search: "volley"})
 	if err != nil {
-		t.Fatalf("FindByPartialNameDescriptionLocation returned error: %s", err)
+		t.Fatalf("List returned error: %s", err)
 	}
 	if len(events) != 1 || events[0].Name != "Beach Volleyball" {
 		t.Fatalf("expected only Beach Volleyball, got %+v", events)
 	}
 
-	events, err = repo.FindByPartialNameDescriptionLocation("VOLLEYBALL")
+	events, err = repo.List(models.EventQuery{Search: "VOLLEYBALL"})
 	if err != nil {
-		t.Fatalf("FindByPartialNameDescriptionLocation returned error: %s", err)
+		t.Fatalf("List returned error: %s", err)
 	}
 	if len(events) != 1 {
 		t.Fatalf("expected case-insensitive match, got %d", len(events))
 	}
 
-	events, err = repo.FindByPartialNameDescriptionLocation("nonexistent")
+	events, err = repo.List(models.EventQuery{Search: "nonexistent"})
 	if err != nil {
-		t.Fatalf("FindByPartialNameDescriptionLocation returned error: %s", err)
+		t.Fatalf("List returned error: %s", err)
 	}
 	if len(events) != 0 {
 		t.Fatalf("expected no matches, got %d", len(events))
 	}
 }
 
-func TestEventRepository_FindAllBefore(t *testing.T) {
+func TestEventRepository_ListBeforeAndAfter(t *testing.T) {
 	cleanTables(t, testDB)
 	repo := NewEventRepository(testDB)
 
@@ -329,39 +329,24 @@ func TestEventRepository_FindAllBefore(t *testing.T) {
 		t.Fatalf("Create returned error: %s", err)
 	}
 
-	events, err := repo.FindAllBefore(tsBase)
+	events, err := repo.List(models.EventQuery{Before: &tsBase})
 	if err != nil {
-		t.Fatalf("FindAllBefore returned error: %s", err)
+		t.Fatalf("List returned error: %s", err)
 	}
 	if len(events) != 1 || events[0].Name != "Past" {
 		t.Fatalf("expected only strictly-earlier event, got %+v", events)
 	}
-}
 
-func TestEventRepository_FindAllAfter(t *testing.T) {
-	cleanTables(t, testDB)
-	repo := NewEventRepository(testDB)
-
-	if err := repo.Create(newEvent("Past", tsPast)); err != nil {
-		t.Fatalf("Create returned error: %s", err)
-	}
-	if err := repo.Create(newEvent("Boundary", tsBase)); err != nil {
-		t.Fatalf("Create returned error: %s", err)
-	}
-	if err := repo.Create(newEvent("Future", tsFar)); err != nil {
-		t.Fatalf("Create returned error: %s", err)
-	}
-
-	events, err := repo.FindAllAfter(tsBase)
+	events, err = repo.List(models.EventQuery{After: &tsBase})
 	if err != nil {
-		t.Fatalf("FindAllAfter returned error: %s", err)
+		t.Fatalf("List returned error: %s", err)
 	}
 	if len(events) != 1 || events[0].Name != "Future" {
 		t.Fatalf("expected only strictly-later event, got %+v", events)
 	}
 }
 
-func TestEventRepository_FindAllBetween(t *testing.T) {
+func TestEventRepository_ListBetween(t *testing.T) {
 	cleanTables(t, testDB)
 	repo := NewEventRepository(testDB)
 
@@ -378,16 +363,97 @@ func TestEventRepository_FindAllBetween(t *testing.T) {
 		t.Fatalf("Create returned error: %s", err)
 	}
 
-	events, err := repo.FindAllBetween(tsMid, tsFar)
+	events, err := repo.List(models.EventQuery{After: &tsMid, Before: &tsFar})
 	if err != nil {
-		t.Fatalf("FindAllBetween returned error: %s", err)
+		t.Fatalf("List returned error: %s", err)
 	}
-	if len(events) != 3 {
-		t.Fatalf("expected 3 events with inclusive boundaries, got %d", len(events))
+	if len(events) != 1 || events[0].Name != "Middle" {
+		t.Fatalf("expected only the strictly-inside event, got %+v", events)
+	}
+
+	widerBefore := tsFar.Add(time.Hour)
+	events, err = repo.List(models.EventQuery{After: &tsMid, Before: &widerBefore})
+	if err != nil {
+		t.Fatalf("List returned error: %s", err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("expected 2 events with widened window (end boundary in, start boundary out), got %d", len(events))
 	}
 	for _, e := range events {
 		if e.Name == "Before" {
 			t.Fatal("event outside window should not be returned")
 		}
+	}
+}
+
+func TestEventRepository_ListFullFilter(t *testing.T) {
+	cleanTables(t, testDB)
+	eventRepo := NewEventRepository(testDB)
+	participantRepo := NewParticipantRepository(testDB)
+
+	fullEvent := newEvent("Full Event", tsFar)
+	fullEvent.Capacity = 1
+	if err := eventRepo.Create(fullEvent); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+
+	spaciousEvent := newEvent("Spacious Event", tsFar)
+	spaciousEvent.Capacity = 10
+	if err := eventRepo.Create(spaciousEvent); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+
+	participant := newParticipant("Ola Petrov", "ola@example.com")
+	if err := participantRepo.Create(participant); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+	if err := eventRepo.AddParticipant(fullEvent.ID, participant.ID); err != nil {
+		t.Fatalf("AddParticipant returned error: %s", err)
+	}
+
+	full := true
+	events, err := eventRepo.List(models.EventQuery{Full: &full})
+	if err != nil {
+		t.Fatalf("List returned error: %s", err)
+	}
+	if len(events) != 1 || events[0].Name != "Full Event" {
+		t.Fatalf("expected only the full event, got %+v", events)
+	}
+
+	notFull := false
+	events, err = eventRepo.List(models.EventQuery{Full: &notFull})
+	if err != nil {
+		t.Fatalf("List returned error: %s", err)
+	}
+	if len(events) != 1 || events[0].Name != "Spacious Event" {
+		t.Fatalf("expected only the spacious event, got %+v", events)
+	}
+}
+
+func TestEventRepository_ListCombinesFilters(t *testing.T) {
+	cleanTables(t, testDB)
+	repo := NewEventRepository(testDB)
+
+	target := newEvent("Beach Target", tsFar)
+	if err := repo.Create(target); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+
+	pastMatch := newEvent("Beach Past", tsPast)
+	if err := repo.Create(pastMatch); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+
+	otherFuture := newEvent("Indoor Future", tsFar)
+	if err := repo.Create(otherFuture); err != nil {
+		t.Fatalf("Create returned error: %s", err)
+	}
+
+	events, err := repo.List(models.EventQuery{Search: "beach", After: &tsBase})
+	if err != nil {
+		t.Fatalf("List returned error: %s", err)
+	}
+	if len(events) != 1 || events[0].Name != "Beach Target" {
+		t.Fatalf("expected only future beach event, got %+v", events)
 	}
 }

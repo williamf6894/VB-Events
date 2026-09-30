@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 	"uuid"
 
@@ -76,18 +77,59 @@ func (h *EventHandler) Create(c *echo.Context) error {
 }
 
 // ListEvents godoc
-// @Summary      List all events
+// @Summary      List events with optional filters
+// @Description  All filters are optional and combine; results are ordered by start time
 // @Tags         events
 // @Produce      json
+// @Param        q query string false "Partial, case-insensitive match on name, description or location"
+// @Param        after query string false "RFC3339 timestamp — only events starting after this"
+// @Param        before query string false "RFC3339 timestamp — only events starting before this"
+// @Param        full query boolean false "Filter by fullness: true = only full events, false = only events with space remaining"
 // @Success      200 {array} models.Event
+// @Failure      400 {object} object "Invalid filter value"
 // @Failure      500 {object} object "Internal error"
 // @Router       /events [get]
 func (h *EventHandler) List(c *echo.Context) error {
-	events, err := h.service.ListAll()
+	query, err := h.parseListQuery(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	events, err := h.service.List(query)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to list events")
 	}
 	return c.JSON(http.StatusOK, events)
+}
+
+func (h *EventHandler) parseListQuery(c *echo.Context) (models.EventQuery, error) {
+	query := models.EventQuery{Search: c.QueryParam("q")}
+
+	if value := c.QueryParam("after"); value != "" {
+		after, err := h.parseTimestamp(value)
+		if err != nil {
+			return query, errors.New("invalid 'after' filter, must be RFC3339")
+		}
+		query.After = &after
+	}
+
+	if value := c.QueryParam("before"); value != "" {
+		before, err := h.parseTimestamp(value)
+		if err != nil {
+			return query, errors.New("invalid 'before' filter, must be RFC3339")
+		}
+		query.Before = &before
+	}
+
+	if value := c.QueryParam("full"); value != "" {
+		full, err := strconv.ParseBool(value)
+		if err != nil {
+			return query, errors.New("invalid 'full' filter, must be true or false")
+		}
+		query.Full = &full
+	}
+
+	return query, nil
 }
 
 // FindEventByID godoc
@@ -222,96 +264,6 @@ func (h *EventHandler) FindByName(c *echo.Context) error {
 // @Summary      Search events by partial name, description, or location
 // @Tags         events
 // @Produce      json
-// @Param        q query string true "Search term"
-// @Success      200 {array} models.Event
-// @Failure      400 {object} object "Missing search term"
-// @Failure      500 {object} object "Internal error"
-// @Router       /events/search [get]
-func (h *EventHandler) Search(c *echo.Context) error {
-	query := c.QueryParam("q")
-	if query == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing search term")
-	}
-
-	events, err := h.service.FindByPartialNameDescriptionLocation(query)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to search events")
-	}
-	return c.JSON(http.StatusOK, events)
-}
-
-// FindEventsBefore godoc
-// @Summary      Find events starting before a timestamp
-// @Tags         events
-// @Produce      json
-// @Param        timestamp query string true "RFC3339 timestamp"
-// @Success      200 {array} models.Event
-// @Failure      400 {object} object "Invalid or missing timestamp"
-// @Failure      500 {object} object "Internal error"
-// @Router       /events/before [get]
-func (h *EventHandler) FindAllBefore(c *echo.Context) error {
-	timestamp, err := h.parseTimestamp(c.QueryParam("timestamp"))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid or missing timestamp, must be RFC3339")
-	}
-
-	events, err := h.service.FindAllBefore(timestamp)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to find events")
-	}
-	return c.JSON(http.StatusOK, events)
-}
-
-// FindEventsAfter godoc
-// @Summary      Find events starting after a timestamp
-// @Tags         events
-// @Produce      json
-// @Param        timestamp query string true "RFC3339 timestamp"
-// @Success      200 {array} models.Event
-// @Failure      400 {object} object "Invalid or missing timestamp"
-// @Failure      500 {object} object "Internal error"
-// @Router       /events/after [get]
-func (h *EventHandler) FindAllAfter(c *echo.Context) error {
-	timestamp, err := h.parseTimestamp(c.QueryParam("timestamp"))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid or missing timestamp, must be RFC3339")
-	}
-
-	events, err := h.service.FindAllAfter(timestamp)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to find events")
-	}
-	return c.JSON(http.StatusOK, events)
-}
-
-// FindEventsBetween godoc
-// @Summary      Find events starting between two timestamps
-// @Tags         events
-// @Produce      json
-// @Param        start query string true "RFC3339 start timestamp"
-// @Param        end query string true "RFC3339 end timestamp"
-// @Success      200 {array} models.Event
-// @Failure      400 {object} object "Invalid or missing timestamps"
-// @Failure      500 {object} object "Internal error"
-// @Router       /events/between [get]
-func (h *EventHandler) FindAllBetween(c *echo.Context) error {
-	start, err := h.parseTimestamp(c.QueryParam("start"))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid or missing start timestamp, must be RFC3339")
-	}
-
-	end, err := h.parseTimestamp(c.QueryParam("end"))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid or missing end timestamp, must be RFC3339")
-	}
-
-	events, err := h.service.FindAllBetween(start, end)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to find events")
-	}
-	return c.JSON(http.StatusOK, events)
-}
-
 // UpdateEvent godoc
 // @Summary      Update an event
 // @Tags         events

@@ -11,9 +11,30 @@ async function request<T>(path: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export function getUpcomingEvents(): Promise<Event[]> {
-  const now = new Date().toISOString()
-  return request<Event[]>(`/events/after?timestamp=${encodeURIComponent(now)}`)
+export interface EventListFilters {
+  search?: string
+  after?: string
+  before?: string
+  full?: boolean
+}
+
+export function getEvents(filters: EventListFilters = {}): Promise<Event[]> {
+  const params = new URLSearchParams()
+  if (filters.search) {
+    params.set('q', filters.search)
+  }
+  if (filters.after) {
+    params.set('after', filters.after)
+  }
+  if (filters.before) {
+    params.set('before', filters.before)
+  }
+  if (filters.full !== undefined) {
+    params.set('full', String(filters.full))
+  }
+
+  const queryString = params.toString()
+  return request<Event[]>(`/events${queryString ? `?${queryString}` : ''}`)
 }
 
 export function getEvent(id: string): Promise<Event> {
