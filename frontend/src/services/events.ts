@@ -1,7 +1,7 @@
 import type { CreateEventPayload, Event, Participant } from '@/types/event'
 import { authHeaders } from '@/services/api'
 
-const API_BASE = '/api'
+const API_BASE = '/api/v1'
 
 async function request<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, { headers: authHeaders() })

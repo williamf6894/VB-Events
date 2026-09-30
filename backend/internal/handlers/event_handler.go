@@ -58,7 +58,8 @@ func (h *EventHandler) parseTimestamp(value string) (time.Time, error) {
 // @Success      201 {object} models.Event
 // @Failure      400 {object} object "Invalid body, or missing name/startTimestamp"
 // @Failure      500 {object} object "Internal error"
-// @Router       /events [post]
+// @Security     BearerAuth
+// @Router       /api/v1/events [post]
 func (h *EventHandler) Create(c *echo.Context) error {
 	var req eventRequest
 	if err := c.Bind(&req); err != nil {
@@ -89,7 +90,7 @@ func (h *EventHandler) Create(c *echo.Context) error {
 // @Success      200 {array} models.Event
 // @Failure      400 {object} object "Invalid filter value"
 // @Failure      500 {object} object "Internal error"
-// @Router       /events [get]
+// @Router       /api/v1/events [get]
 func (h *EventHandler) List(c *echo.Context) error {
 	query, err := h.parseListQuery(c)
 	if err != nil {
@@ -142,7 +143,7 @@ func (h *EventHandler) parseListQuery(c *echo.Context) (models.EventQuery, error
 // @Failure      400 {object} object "Invalid event id"
 // @Failure      404 {object} object "Event not found"
 // @Failure      500 {object} object "Internal error"
-// @Router       /events/{id} [get]
+// @Router       /api/v1/events/{id} [get]
 func (h *EventHandler) FindByID(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -172,7 +173,7 @@ func (h *EventHandler) FindByID(c *echo.Context) error {
 // @Failure      409 {object} object "Already registered, event is at capacity, or event has already started"
 // @Failure      500 {object} object "Internal error"
 // @Security     BearerAuth
-// @Router       /events/{id}/participants [post]
+// @Router       /api/v1/events/{id}/participants [post]
 func (h *EventHandler) Join(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -215,7 +216,7 @@ func (h *EventHandler) Join(c *echo.Context) error {
 // @Failure      409 {object} object "Already registered, event is at capacity, or event has already started"
 // @Failure      500 {object} object "Internal error"
 // @Security     BearerAuth
-// @Router       /events/{id}/participants/{participantId} [post]
+// @Router       /api/v1/events/{id}/participants/{participantId} [post]
 func (h *EventHandler) Invite(c *echo.Context) error {
 	eventID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -261,7 +262,7 @@ func (h *EventHandler) Invite(c *echo.Context) error {
 // @Failure      404 {object} object "Event not found, or not registered"
 // @Failure      500 {object} object "Internal error"
 // @Security     BearerAuth
-// @Router       /events/{id}/participants [delete]
+// @Router       /api/v1/events/{id}/participants [delete]
 func (h *EventHandler) Leave(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -295,7 +296,7 @@ func (h *EventHandler) Leave(c *echo.Context) error {
 // @Success      200 {object} models.Event
 // @Failure      404 {object} object "Event not found"
 // @Failure      500 {object} object "Internal error"
-// @Router       /events/name/{name} [get]
+// @Router       /api/v1/events/name/{name} [get]
 func (h *EventHandler) FindByName(c *echo.Context) error {
 	name := c.Param("name")
 
@@ -325,7 +326,8 @@ func (h *EventHandler) FindByName(c *echo.Context) error {
 // @Failure      400 {object} object "Invalid body or id, or missing name/startTimestamp"
 // @Failure      404 {object} object "Event not found"
 // @Failure      500 {object} object "Internal error"
-// @Router       /events/{id} [put]
+// @Security     BearerAuth
+// @Router       /api/v1/events/{id} [put]
 func (h *EventHandler) Update(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -361,7 +363,8 @@ func (h *EventHandler) Update(c *echo.Context) error {
 // @Failure      400 {object} object "Invalid event id"
 // @Failure      404 {object} object "Event not found"
 // @Failure      500 {object} object "Internal error"
-// @Router       /events/{id} [delete]
+// @Security     BearerAuth
+// @Router       /api/v1/events/{id} [delete]
 func (h *EventHandler) Delete(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
