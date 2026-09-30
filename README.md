@@ -38,7 +38,6 @@ For the CORS Origins, you can use the following command to get the origin of the
 The fallback is set to the Vite Dev Server default.
 In docker-compose.yml this is set to http://localhost:8080
 
-
 ### Without Docker
 
 Ensure you have a Postgres database running that you can connect to and update the .env file
@@ -67,14 +66,14 @@ air
 
 Other commands that you can run are 
 ```bash
-make docs
-make build
-make run
-make fmt
-make tidy
-make localdb
-make test
-make seed
+make docs # Generates Swagger docs
+make build # Builds the backend
+make run # Runs the backend
+make fmt # Formats the code
+make tidy # go mod tidy for dependencies
+make localdb # Starts a local Postgres database
+make test # Runs the tests
+make seed # Seeds the database with demo data - only run in development
 ```
 
 #### How to run the frontend
@@ -82,7 +81,7 @@ Node 24.37.0 is required to run the frontend.
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 
 ```
@@ -126,6 +125,25 @@ This means if you want to collect all of the events a participant has joined, yo
 Or if you want to collect all of the participants who have joined a specific event, you can do that with a single query.
 The join-table is called `participant_event` and it has a `participant_id` and an `event_id` column. Making it smaller and faster to query using the UUID v7 IDs.
 
+### Structure of the code
+
+The backend has a cmd directory that contains the main.go file and the seed command that is used to seed the database for demos.
+The internal directory contains the config, db, handlers, middleware, models, repository, and services directories.
+config contains the Load function that is used to load the configuration from the .env file or the environment.
+db contains the database connection and the initDB function that is used to connect to the database.
+handlers contains the code used to handle the HTTP requests.
+middleware is used for the authentication middleware and any other middleware that is added.
+models contains the models used by the application. These are GORM structs because I felt it would be easier for this use-case.
+repository contains the code used to interact with the database.
+services contains the code used to interact with the services.
+
+The frontend structure is a bit different.
+The models are in the src/types directory. 
+The services are in the src/services directory and are used to interact with the backend.
+The store is mostly for keeping track of the authentication state.
+The components are in the src/components directory and are used to display the Dialogs UI similar 
+to the views directory which is used for the pages.
+
 
 ## CI/CD
 See the .github/workflows directory
@@ -160,3 +178,17 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --exit-code 1 --severity HIGH,CRITICAL vb-events-frontend:latest
 ```
 
+## With more time
+If it was a microservice project you would need tracing added.
+
+A location to upload the docker images to.
+
+K6 load testing
+
+More unit tests and integration tests.
+
+Permissions for the users to be able to be limited.
+- Only allowing them to remove their own events
+- Preventing them from removing other people's events
+- Inviting other people wouldn't automatically add them to the event
+- etc

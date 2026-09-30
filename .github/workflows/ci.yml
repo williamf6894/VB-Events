@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  go-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.27.0'
+          cache-dependency-path: backend/go.sum
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Vet
+        run: go vet -v ./...
+
+      - name: Test
+        run: go test -v ./...
+
+  node-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm run test --if-present
+
+  docker-build:
+    needs: [go-build, node-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the Backend Docker image
+        run: docker build ./backend --file Dockerfile --tag vb-events-backend:ci
+
+      - name: Build the Frontend Docker image
+        run: docker build ./frontend --file Dockerfile --tag vb-events-frontend:ci
+
+      - name: Scan the Backend Docker image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: vb-events-backend:ci
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+      - name: Scan the Frontend Docker image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: vb-events-frontend:ci
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
