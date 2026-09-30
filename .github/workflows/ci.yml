@@ -57,10 +57,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build the Backend Docker image
-        run: docker build ./backend --file Dockerfile --tag vb-events-backend:ci
+        run: docker build ./backend --tag vb-events-backend:ci --load
 
       - name: Build the Frontend Docker image
-        run: docker build ./frontend --file Dockerfile --tag vb-events-frontend:ci
+        run: docker build ./frontend --tag vb-events-frontend:ci --load
 
       - name: Scan the Backend Docker image
         uses: aquasecurity/trivy-action@v0.36.0
