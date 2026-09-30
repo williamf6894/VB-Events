@@ -17,6 +17,9 @@ build:
 run:
 	go run ./cmd
 
+fmt:
+	go fmt ./...
+
 tidy:
 	go mod tidy
 

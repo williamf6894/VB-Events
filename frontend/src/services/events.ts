@@ -1,4 +1,4 @@
-import type { CreateEventPayload, Event } from '@/types/event'
+import type { CreateEventPayload, Event, Participant } from '@/types/event'
 import { authHeaders } from '@/services/api'
 
 const API_BASE = '/api'
@@ -89,6 +89,18 @@ export async function leaveEvent(id: string): Promise<void> {
     headers: authHeaders(),
   })
   await expectOk(response, 'Failed to leave event.')
+}
+
+export function getParticipants(): Promise<Participant[]> {
+  return request<Participant[]>('/participants')
+}
+
+export async function inviteParticipant(eventId: string, participantId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/events/${eventId}/participants/${participantId}`, {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+  await expectOk(response, 'Failed to invite participant.')
 }
 
 async function expectOk(response: Response, fallbackMessage: string): Promise<void> {

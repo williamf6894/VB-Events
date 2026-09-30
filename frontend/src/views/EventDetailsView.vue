@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import EventFormDialog from '@/components/EventFormDialog.vue'
+import ParticipantInviteDialog from '@/components/ParticipantInviteDialog.vue'
 import { deleteEvent, getEvent, joinEvent, leaveEvent } from '@/services/events'
 import { useAuthStore } from '@/stores/auth'
 import type { Event } from '@/types/event'
@@ -15,6 +16,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const notFound = ref(false)
 const showEditDialog = ref(false)
+const showInviteDialog = ref(false)
 const deleting = ref(false)
 const joining = ref(false)
 const leaving = ref(false)
@@ -139,6 +141,13 @@ function formatDate(timestamp: string): string {
         @close="showEditDialog = false"
       />
 
+      <ParticipantInviteDialog
+        v-if="showInviteDialog"
+        :event="event"
+        @invited="loadEvent"
+        @close="showInviteDialog = false"
+      />
+
       <header class="event-details__header">
         <h1>{{ event.name }}</h1>
         <div class="event-details__header-actions">
@@ -166,6 +175,15 @@ function formatDate(timestamp: string): string {
           </template>
           <button class="event-details__edit" type="button" @click="showEditDialog = true">
             Edit
+          </button>
+          <button
+            class="event-details__invite"
+            type="button"
+            :disabled="joinDisabledReason !== null"
+            :title="joinDisabledReason ? `Cannot add participants: ${joinDisabledReason}` : undefined"
+            @click="showInviteDialog = true"
+          >
+            Invite
           </button>
           <button class="event-details__delete" type="button" :disabled="deleting" @click="onDelete">
             {{ deleting ? 'Deleting…' : 'Delete' }}
@@ -263,6 +281,26 @@ function formatDate(timestamp: string): string {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+
+.event-details__invite {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  padding: 0.45rem 1rem;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.event-details__invite:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.event-details__invite:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .event-details__participate {
