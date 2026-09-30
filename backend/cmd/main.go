@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	echoprometheus "github.com/labstack/echo-prometheus"
@@ -82,7 +83,17 @@ func main() {
 	// Middleware
 
 	e := echo.New()
-	e.Pre(echoMiddleware.RemoveTrailingSlash())
+	// The Swagger UI is served from /swagger/ (the file server root), so it must be
+	// exempt from trailing-slash stripping — otherwise it ping-pongs with the
+	// /swagger -> /swagger/ redirect below.
+	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c *echo.Context) error {
+			if strings.HasPrefix(c.Request().URL.Path, "/swagger") {
+				return next(c)
+			}
+			return echoMiddleware.RemoveTrailingSlash()(next)(c)
+		}
+	})
 	e.Use(echoprometheus.NewMiddleware("vb-events"))
 	// Depending on how much you want to log and how many logs you are sending
 	// you may want to comment out this request logger.
