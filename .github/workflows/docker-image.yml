@@ -8,11 +8,15 @@ on:
 
 jobs:
 
-  build:
+  docker-build:
+    needs: [go-build, node-build]
 
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    - name: Build the Backend Docker image
+      run: docker build ./backend --file Dockerfile --tag vb-events-backend:$(date +%s)
+
+    - name: Build the Frontend Docker image
+      run: docker build ./frontend --file Dockerfile --tag vb-events-frontend:$(date +%s)
