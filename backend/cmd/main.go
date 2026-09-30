@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	echoprometheus "github.com/labstack/echo-prometheus"
 	"github.com/labstack/echo/v5"
 	echoMiddleware "github.com/labstack/echo/v5/middleware"
 	swaggerFiles "github.com/swaggo/files/v2"
@@ -82,10 +83,10 @@ func main() {
 
 	e := echo.New()
 	e.Pre(echoMiddleware.RemoveTrailingSlash())
+	e.Use(echoprometheus.NewMiddleware("vb-events"))
 	// Depending on how much you want to log and how many logs you are sending
 	// you may want to comment out this request logger.
 	e.Use(echoMiddleware.RequestLoggerWithConfig(echoMiddleware.RequestLoggerConfig{
-
 		// Skipping /healthz because its noisy
 		Skipper: func(c *echo.Context) bool {
 			return c.Request().URL.Path == "/healthz"
@@ -96,7 +97,8 @@ func main() {
 		LogValuesFunc: func(c *echo.Context, v echoMiddleware.RequestLoggerValues) error {
 			logger := c.Logger()
 			if v.Error == nil {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST",
+				logger.LogAttrs(
+					context.Background(), slog.LevelInfo, "REQUEST",
 					slog.String("method", v.Method),
 					slog.String("uri", v.URI),
 					slog.Int("status", v.Status),
@@ -105,7 +107,8 @@ func main() {
 				return nil
 			}
 
-			logger.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR",
+			logger.LogAttrs(
+				context.Background(), slog.LevelError, "REQUEST_ERROR",
 				slog.String("method", v.Method),
 				slog.String("uri", v.URI),
 				slog.Int("status", v.Status),
@@ -133,6 +136,9 @@ func main() {
 
 	// Health
 	e.GET("/healthz", healthHandler.Check)
+
+	// Metrics
+	e.GET("/metrics", echoprometheus.NewHandler())
 
 	// API
 	e.POST("/auth/register", authHandler.Register)
