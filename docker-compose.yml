@@ -2,45 +2,47 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: vbevents
-      POSTGRES_PASSWORD: vbevents
-      POSTGRES_DB: events
+      POSTGRES_USER: ${POSTGRES_USER:-vbevents}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-events}
     ports:
       - "5432:5432"
     volumes:
       - vb-events_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vbevents -d events"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vbevents} -d ${POSTGRES_DB:-events}"]
       interval: 5s
       timeout: 3s
       retries: 10
 
   backend:
     build: ./backend
+    image: ghcr.io/${IMAGE_OWNER:-williamf6894}/vb-events-backend:${IMAGE_TAG:-latest}
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: vbevents
-      DB_PASSWORD: vbevents
-      DB_DATABASE: events
-      API_PORT: "8200"
-      CORS_ORIGINS: "http://localhost:8080"
-      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env or the environment}
+      DB_USER: ${POSTGRES_USER:-vbevents}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      DB_DATABASE: ${POSTGRES_DB:-events}
+      API_PORT: "${API_PORT:-8200}"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "8200:8200"
+      - "${API_PORT:-8200}:${API_PORT:-8200}"
 
   frontend:
     build: ./frontend
+    image: ghcr.io/${IMAGE_OWNER:-williamf6894}/vb-events-frontend:${IMAGE_TAG:-latest}
     environment:
-      API_UPSTREAM: backend:8200
+      API_UPSTREAM: backend:${API_PORT:-8200}
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "8080:80"
+      - "${FRONTEND_PORT:-8080}:80"
 
 volumes:
   vb-events_postgres_data:

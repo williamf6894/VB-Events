@@ -110,6 +110,12 @@ docker compose up
 
 Please read the docker-compose.yml file details on environment variables set and how the healthcheck works.
 
+A note on the two sets of database variables you will see:
+`DB_DATABASE`, `DB_USER` etc are what the Go backend reads to connect to the database (see backend/internal/config).
+`POSTGRES_DB`, `POSTGRES_USER` etc are only used by docker-compose to initialise the Postgres container on first start.
+In the docker-compose.yml the backend's `DB_*` values are filled in from the `POSTGRES_*` values so there is a single source of truth and they cannot drift apart.
+You only need to set the `DB_*` variables yourself when running the backend without Docker.
+
 
 ## Architectural Decisions
 
