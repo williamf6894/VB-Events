@@ -1,7 +1,7 @@
 import { authHeaders } from '@/services/api'
 import type { Participant } from '@/types/event'
 
-const API_BASE = '/api'
+const API_BASE = '/api/v1'
 
 export async function loginRequest(email: string, password: string): Promise<string> {
   const response = await fetch(`${API_BASE}/auth/login`, {

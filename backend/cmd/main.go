@@ -151,25 +151,27 @@ func main() {
 	// Metrics
 	e.GET("/metrics", echoprometheus.NewHandler())
 
-	// API
-	e.POST("/auth/register", authHandler.Register)
-	e.POST("/auth/login", authHandler.Login)
-	e.GET("/auth/me", authHandler.Me, authMiddleware)
+	// API — public reads and auth endpoints
+	api := e.Group("/api/v1")
+	api.POST("/auth/register", authHandler.Register)
+	api.POST("/auth/login", authHandler.Login)
+	api.GET("/events", eventHandler.List)
+	api.GET("/events/:id", eventHandler.FindByID)
+	api.GET("/events/name/:name", eventHandler.FindByName)
 
-	e.GET("/participants", participantHandler.List)
-	e.GET("/participants/:id", participantHandler.FindByID)
-	e.PUT("/participants/:id", participantHandler.Update)
-	e.DELETE("/participants/:id", participantHandler.Delete)
-
-	e.POST("/events", eventHandler.Create)
-	e.GET("/events", eventHandler.List)
-	e.GET("/events/:id", eventHandler.FindByID)
-	e.GET("/events/name/:name", eventHandler.FindByName)
-	e.PUT("/events/:id", eventHandler.Update)
-	e.DELETE("/events/:id", eventHandler.Delete)
-	e.POST("/events/:id/participants", eventHandler.Join, authMiddleware)
-	e.POST("/events/:id/participants/:participantId", eventHandler.Invite, authMiddleware)
-	e.DELETE("/events/:id/participants", eventHandler.Leave, authMiddleware)
+	// API — authenticated: all writes, participant management, current user
+	secured := api.Group("", authMiddleware)
+	secured.GET("/auth/me", authHandler.Me)
+	secured.GET("/participants", participantHandler.List)
+	secured.GET("/participants/:id", participantHandler.FindByID)
+	secured.PUT("/participants/:id", participantHandler.Update)
+	secured.DELETE("/participants/:id", participantHandler.Delete)
+	secured.POST("/events", eventHandler.Create)
+	secured.PUT("/events/:id", eventHandler.Update)
+	secured.DELETE("/events/:id", eventHandler.Delete)
+	secured.POST("/events/:id/participants", eventHandler.Join)
+	secured.POST("/events/:id/participants/:participantId", eventHandler.Invite)
+	secured.DELETE("/events/:id/participants", eventHandler.Leave)
 
 	// Swagger Documentation
 	e.GET("/swagger", func(c *echo.Context) error {

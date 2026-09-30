@@ -22,10 +22,11 @@ func NewParticipantHandler(service *services.ParticipantService) *ParticipantHan
 // ListParticipants godoc
 // @Summary      List all participants
 // @Tags         participants
+// @Security     BearerAuth
 // @Produce      json
 // @Success      200 {array} models.Participant
 // @Failure      500 {object} object "Internal error"
-// @Router       /participants [get]
+// @Router       /api/v1/participants [get]
 func (h *ParticipantHandler) List(c *echo.Context) error {
 	participants, err := h.service.ListAll()
 	if err != nil {
@@ -37,13 +38,14 @@ func (h *ParticipantHandler) List(c *echo.Context) error {
 // FindParticipantByID godoc
 // @Summary      Get a participant by ID
 // @Tags         participants
+// @Security     BearerAuth
 // @Produce      json
 // @Param        id path string true "Participant ID (UUID)"
 // @Success      200 {object} models.Participant
 // @Failure      400 {object} object "Invalid participant id"
 // @Failure      404 {object} object "Participant not found"
 // @Failure      500 {object} object "Internal error"
-// @Router       /participants/{id} [get]
+// @Router       /api/v1/participants/{id} [get]
 func (h *ParticipantHandler) FindByID(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -64,6 +66,7 @@ func (h *ParticipantHandler) FindByID(c *echo.Context) error {
 // UpdateParticipant godoc
 // @Summary      Update a participant
 // @Tags         participants
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id path string true "Participant ID (UUID)"
@@ -73,7 +76,7 @@ func (h *ParticipantHandler) FindByID(c *echo.Context) error {
 // @Failure      404 {object} object "Participant not found"
 // @Failure      409 {object} object "Email already in use"
 // @Failure      500 {object} object "Internal error"
-// @Router       /participants/{id} [put]
+// @Router       /api/v1/participants/{id} [put]
 func (h *ParticipantHandler) Update(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -111,12 +114,13 @@ func (h *ParticipantHandler) Update(c *echo.Context) error {
 // DeleteParticipant godoc
 // @Summary      Delete a participant
 // @Tags         participants
+// @Security     BearerAuth
 // @Param        id path string true "Participant ID (UUID)"
 // @Success      204 "No content"
 // @Failure      400 {object} object "Invalid participant id"
 // @Failure      404 {object} object "Participant not found"
 // @Failure      500 {object} object "Internal error"
-// @Router       /participants/{id} [delete]
+// @Router       /api/v1/participants/{id} [delete]
 func (h *ParticipantHandler) Delete(c *echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

@@ -35,7 +35,7 @@ type participantRequest struct {
 // @Failure      400 {object} object "Invalid body, or missing name/email/password (min 8 chars)"
 // @Failure      409 {object} object "Email already in use"
 // @Failure      500 {object} object "Internal error"
-// @Router       /auth/register [post]
+// @Router       /api/v1/auth/register [post]
 func (h *AuthHandler) Register(c *echo.Context) error {
 	var req participantRequest
 	if err := c.Bind(&req); err != nil {
@@ -73,7 +73,7 @@ func (h *AuthHandler) Register(c *echo.Context) error {
 // @Failure      400 {object} object "Invalid request body"
 // @Failure      401 {object} object "Invalid credentials"
 // @Failure      500 {object} object "Internal error"
-// @Router       /auth/login [post]
+// @Router       /api/v1/auth/login [post]
 func (h *AuthHandler) Login(c *echo.Context) error {
 	var req services.LoginRequest
 	if err := c.Bind(&req); err != nil {
@@ -97,7 +97,7 @@ func (h *AuthHandler) Login(c *echo.Context) error {
 // @Success      200 {object} models.Participant
 // @Failure      401 {object} object "Not authenticated"
 // @Security     BearerAuth
-// @Router       /auth/me [get]
+// @Router       /api/v1/auth/me [get]
 func (h *AuthHandler) Me(c *echo.Context) error {
 	participant := middleware.ParticipantFrom(c)
 	if participant == nil {

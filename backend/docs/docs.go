@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/login": {
+        "/api/v1/auth/login": {
             "post": {
                 "description": "Returns a signed JWT valid for 24 hours",
                 "consumes": [
@@ -67,7 +67,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/me": {
+        "/api/v1/auth/me": {
             "get": {
                 "security": [
                     {
@@ -97,7 +97,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/register": {
+        "/api/v1/auth/register": {
             "post": {
                 "description": "Creates a participant account with a name, unique email and password",
                 "consumes": [
@@ -149,7 +149,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/events": {
+        "/api/v1/events": {
             "get": {
                 "description": "All filters are optional and combine; results are ordered by start time",
                 "produces": [
@@ -210,6 +210,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates an event with a name and start timestamp",
                 "consumes": [
                     "application/json"
@@ -254,7 +259,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/events/name/{name}": {
+        "/api/v1/events/name/{name}": {
             "get": {
                 "produces": [
                     "application/json"
@@ -294,7 +299,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/events/{id}": {
+        "/api/v1/events/{id}": {
             "get": {
                 "produces": [
                     "application/json"
@@ -340,6 +345,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -398,6 +408,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "tags": [
                     "events"
                 ],
@@ -436,7 +451,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/events/{id}/participants": {
+        "/api/v1/events/{id}/participants": {
             "post": {
                 "security": [
                     {
@@ -543,7 +558,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/events/{id}/participants/{participantId}": {
+        "/api/v1/events/{id}/participants/{participantId}": {
             "post": {
                 "security": [
                     {
@@ -608,34 +623,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/healthz": {
+        "/api/v1/participants": {
             "get": {
-                "description": "Returns service status and verifies database connectivity",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Service health check",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.healthResponse"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.healthResponse"
-                        }
+                "security": [
+                    {
+                        "BearerAuth": []
                     }
-                }
-            }
-        },
-        "/participants": {
-            "get": {
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -662,8 +656,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/participants/{id}": {
+        "/api/v1/participants/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -708,6 +707,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -770,6 +774,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "tags": [
                     "participants"
                 ],
@@ -803,6 +812,32 @@ const docTemplate = `{
                         "description": "Internal error",
                         "schema": {
                             "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/healthz": {
+            "get": {
+                "description": "Returns service status and verifies database connectivity",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Service health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.healthResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.healthResponse"
                         }
                     }
                 }
