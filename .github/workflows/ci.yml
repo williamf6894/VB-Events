@@ -63,7 +63,7 @@ jobs:
         run: docker build ./frontend --file Dockerfile --tag vb-events-frontend:ci
 
       - name: Scan the Backend Docker image
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: vb-events-backend:ci
           format: table
@@ -72,7 +72,7 @@ jobs:
           severity: CRITICAL,HIGH
 
       - name: Scan the Frontend Docker image
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: vb-events-frontend:ci
           format: table
