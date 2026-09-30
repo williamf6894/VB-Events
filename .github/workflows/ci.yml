@@ -79,3 +79,58 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           severity: CRITICAL,HIGH
+
+  api-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vbevents
+          POSTGRES_PASSWORD: vbevents
+          POSTGRES_DB: events
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vbevents -d events"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: vbevents
+      DB_PASSWORD: vbevents
+      DB_DATABASE: events
+      API_PORT: "8200"
+      JWT_SECRET: ci-test-secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.27.0'
+          cache-dependency-path: backend/go.sum
+
+      - name: Migrate and seed database
+        run: go run ./cmd/seed
+
+      - name: Start API and wait for health
+        run: |
+          nohup go run ./cmd > api.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8200/healthz >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:8200/healthz
+
+      - name: Run Newman tests
+        run: npx -y newman run ../testing/postman/vb-events.postman_collection.json -e ../testing/postman/vb-events.postman_environment.json
+
+      - name: Show API log on failure
+        if: failure()
+        run: cat api.log

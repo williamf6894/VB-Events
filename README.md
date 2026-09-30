@@ -74,6 +74,7 @@ make tidy # go mod tidy for dependencies
 make localdb # Starts a local Postgres database
 make test # Runs the tests
 make seed # Seeds the database with demo data - only run in development
+make api-test # Runs the Postman tests
 ```
 
 #### How to run the frontend
@@ -151,6 +152,11 @@ See the .github/workflows directory
 ## Prometheus Metrics
 The backend exposes prometheus metrics on /metrics
 Remember to use the backend port, not the frontend port. `localhost:8200/metrics`
+
+## Postman Tests
+Postmans are in the testing/postman directory.
+The tests are run with the `make api-test` command.
+Tests are also run in the CI/CD pipeline.
 
 ## Docs
 The backend exposes Swagger documentation on /swagger

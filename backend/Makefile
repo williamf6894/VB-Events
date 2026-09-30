@@ -1,4 +1,4 @@
-.PHONY: docs build run tidy localdb test seed
+.PHONY: docs build run tidy localdb test seed api-test
 
 SWAG := $(shell go env GOPATH)/bin/swag
 
@@ -7,6 +7,10 @@ seed:
 
 test:
 	go test ./... -v
+
+api-test:
+	npx -y newman run ../testing/postman/vb-events.postman_collection.json \
+		-e ../testing/postman/vb-events.postman_environment.json
 
 docs:
 	$(SWAG) init -g cmd/main.go -o docs --parseInternal
