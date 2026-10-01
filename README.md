@@ -102,6 +102,7 @@ I have not added any tests to the frontend yet.
 ### With Docker
 
 To run the backend with Docker ensure you have Docker and Docker Compose installed.
+Please ensure you have a .env file configured in the project root. Use the .env.example file as a reference.
 
 ```bash
 # From the project root
@@ -116,6 +117,10 @@ A note on the two sets of database variables you will see:
 In the docker-compose.yml the backend's `DB_*` values are filled in from the `POSTGRES_*` values so there is a single source of truth and they cannot drift apart.
 You only need to set the `DB_*` variables yourself when running the backend without Docker.
 
+### Remote Deployment
+
+The CI/CD Pipeline (Github Actions) is configured to deploy to a Linode server on each update to the master branch (Push or PR).
+The deploy step can only be approved by the project owner (William).
 
 ## Architectural Decisions
 
